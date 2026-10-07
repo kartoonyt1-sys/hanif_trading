@@ -1,0 +1,436 @@
+{% extends "home/base.html" %}
+{% load static wagtailcore_tags wagtailimages_tags bilingual_tags %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'home/css/hero-modern.css' %}" />
+<style>
+    /* ------------------------------------------------------------------
+       THEME COLORS — pulled from Wagtail admin (Settings -> Site Branding
+       & Settings -> Theme Colors). Change them there; this block just
+       turns whatever is saved into CSS variables the rest of the site's
+       stylesheet(s) can use, e.g. color: var(--color-primary);
+       ------------------------------------------------------------------ */
+    :root {
+        --color-primary: {{ branding.primary_color|default:"#0b3d91" }};
+        --color-secondary: {{ branding.secondary_color|default:"#d4af37" }};
+        --color-accent: {{ branding.accent_color|default:"#0f9d58" }};
+        --color-background: {{ branding.background_color|default:"#ffffff" }};
+        --color-text: {{ branding.text_color|default:"#1a1a1a" }};
+    }
+    body {
+        background-color: var(--color-background);
+        color: var(--color-text);
+    }
+
+    /* Hero overlay overrides: drop the green tint, let the video read clearly.
+       A soft neutral scrim sits only behind the text side so the copy stays
+       legible without washing the whole clip in color. */
+    .hero-sky {
+        background: linear-gradient(180deg, rgba(0,0,0,.10) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,.45) 100%);
+    }
+    .hero-overlay {
+        background: linear-gradient(100deg, rgba(6,10,9,.68) 0%, rgba(6,10,9,.34) 40%, rgba(6,10,9,.05) 62%, rgba(6,10,9,.30) 100%);
+    }
+    .hero-title, .hero-tagline, .hero-description {
+        text-shadow: 0 2px 18px rgba(0,0,0,.35);
+    }
+
+    /* Gallery + testimonials — minimal layout so they work even before
+       your designer styles them properly in hero-modern.css */
+    .media-gallery .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 1.25rem;
+    }
+    .media-gallery .gallery-item {
+        position: relative;
+        border-radius: 12px;
+        overflow: hidden;
+        aspect-ratio: 4 / 3;
+        background: #000;
+    }
+    .media-gallery .gallery-item img,
+    .media-gallery .gallery-item video,
+    .media-gallery .gallery-item iframe {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border: 0;
+        display: block;
+    }
+    .media-gallery .gallery-caption {
+        position: absolute;
+        inset-inline: 0;
+        bottom: 0;
+        padding: .5rem .75rem;
+        background: linear-gradient(0deg, rgba(0,0,0,.65), rgba(0,0,0,0));
+        color: #fff;
+        font-size: .85rem;
+    }
+    .testimonials .testimonial-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+    .testimonials .testimonial-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 18px rgba(0,0,0,.06);
+    }
+    .testimonials .testimonial-header {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        margin-bottom: .75rem;
+    }
+    .testimonials .testimonial-header img {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    .testimonials .testimonial-name { font-weight: 600; }
+    .testimonials .testimonial-role { font-size: .8rem; opacity: .7; }
+    .testimonials .stars {
+        position: relative;
+        display: inline-block;
+        font-size: 1.05rem;
+        letter-spacing: 2px;
+        color: #ddd;
+        margin-bottom: .5rem;
+    }
+    .testimonials .stars::before {
+        content: "\2605\2605\2605\2605\2605";
+        position: absolute;
+        top: 0; left: 0;
+        width: calc(var(--rating) / 5 * 100%);
+        overflow: hidden;
+        white-space: nowrap;
+        color: var(--color-secondary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- HERO : admin-controlled video (falls back to the default truck clip) -->
+<section class="hero hero-night">
+    {% if page.hero_video_file %}
+        <video class="hero-video" src="{{ page.hero_video_file.url }}"
+               {% if page.hero_image %}poster="{% image page.hero_image width-1600 as hposter %}{{ hposter.url }}"{% endif %}
+               autoplay muted loop playsinline preload="auto" aria-hidden="true"></video>
+    {% elif page.hero_video_embed_url %}
+        <iframe class="hero-video hero-video-embed" src="{{ page.hero_video_embed_url }}"
+                title="Hero video" allow="autoplay; encrypted-media" allowfullscreen
+                aria-hidden="true"></iframe>
+    {% else %}
+        <video class="hero-video" src="{% static 'home/video/hero-truck.mp4' %}"
+               poster="{% static 'home/images/hero-truck-poster.jpg' %}"
+               autoplay muted loop playsinline preload="auto" aria-hidden="true"></video>
+    {% endif %}
+    <div class="hero-sky"></div>
+    <div class="hero-overlay"></div>
+
+    <div class="container hero-inner">
+        <div class="flag-bar" aria-hidden="true">
+            <span class="flag-stripe stripe-black"></span>
+            <span class="flag-stripe stripe-red"></span>
+            <span class="flag-stripe stripe-green"></span>
+        </div>
+
+        <div class="hero-copy">
+            <p class="eyebrow">{{ page|bi:"hero_eyebrow" }}</p>
+            <h1 class="hero-title">
+                {{ page|bi:"hero_title_line1" }}<br>
+                <span class="accent">{{ page|bi:"hero_title_line2" }}</span>
+            </h1>
+            <p class="hero-tagline">{{ page|bi:"hero_tagline" }}</p>
+            {% if page|bi:"hero_description" %}
+                <p class="hero-description">{{ page|bi:"hero_description" }}</p>
+            {% endif %}
+            <div class="hero-buttons">
+                <a href="{{ page.hero_button1_link|default:'#services' }}" class="btn btn-primary btn-glow">
+                    {{ page|bi:"hero_button1_text" }} <span class="arrow">&#8594;</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ABOUT -->
+<section class="about" id="about">
+    <div class="container about-grid">
+        <div class="about-copy" data-reveal>
+            <p class="eyebrow">{{ page|bi:"about_label" }}</p>
+            <h2>{{ page|bi:"about_title" }}</h2>
+            <div class="rich-text">{{ page|bi:"about_body"|richtext }}</div>
+            {% if page.about_button_link %}
+            <a href="{{ page.about_button_link }}" class="btn btn-primary">{{ page|bi:"about_button_text" }}</a>
+            {% endif %}
+
+            {% if page.stats.all %}
+            <div class="stats-row">
+                {% for stat in page.stats.all %}
+                    <div class="stat">
+                        <span class="stat-number" data-count="{{ stat.number }}">0</span>
+                        <span class="stat-label">{{ stat|bi:"label" }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="about-media" data-reveal>
+            {% if page.about_image %}
+                {% image page.about_image width-800 as about_img %}
+                <img src="{{ about_img.url }}" alt="{{ page|bi:'about_title' }}" />
+            {% endif %}
+            {% if page|bi:"about_overlay_text" %}
+                <div class="about-overlay-text">{{ page|bi:"about_overlay_text" }}</div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- SERVICES : "What we do" — redesigned as a modern split lane grid -->
+<section class="services services-modern" id="services">
+    <div class="container">
+        <div class="section-heading services-heading" data-reveal>
+            <div>
+                <p class="eyebrow">{{ page|bi:"services_label" }}</p>
+                <h2>{% if IS_RTL %}{{ page|bi:"services_title" }}{% else %}What we <span class="accent">move for you</span>{% endif %}</h2>
+            </div>
+            {% if page|bi:"services_intro" %}<p class="section-intro">{{ page|bi:"services_intro" }}</p>{% endif %}
+        </div>
+
+        <div class="services-lanes" data-reveal-group>
+            {% for service in page.services.all %}
+                <div class="service-lane" data-reveal style="--i:{{ forloop.counter0 }}">
+                    <div class="service-lane-media">
+                        {% if service.image %}
+                            {% image service.image width-500 as simg %}
+                            <img src="{{ simg.url }}" alt="{{ service|bi:'title' }}" />
+                        {% else %}
+                            <div class="service-lane-icon">
+                                {% if service.icon %}
+                                    {% image service.icon width-40 as sicon %}
+                                    <img src="{{ sicon.url }}" alt="" />
+                                {% else %}
+                                    <span class="icon-fallback">&#9670;</span>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="service-lane-body">
+                        <h3>{{ service|bi:"title" }}</h3>
+                        <p>{{ service|bi:"description" }}</p>
+                        <a href="{% if service.link_page %}{{ service.link_page.url }}{% else %}#{% endif %}" class="link-more">
+                            {% if IS_RTL %}بیشتر بدانید{% else %}Learn more{% endif %} <span class="arrow">&#8594;</span>
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- ROUTES -->
+<section class="routes">
+    <div class="container routes-grid">
+        <div class="routes-copy" data-reveal>
+            <p class="eyebrow">{{ page|bi:"routes_label" }}</p>
+            <h2>{{ page|bi:"routes_title" }}</h2>
+            {% if page|bi:"routes_intro" %}<p>{{ page|bi:"routes_intro" }}</p>{% endif %}
+            {% if page.routes_button_link %}
+            <a href="{{ page.routes_button_link }}" class="btn btn-primary">{{ page|bi:"routes_button_text" }}</a>
+            {% endif %}
+        </div>
+
+        <div class="routes-map" data-reveal>
+            <div class="route-line">
+                {% for stop in page.route_stops.all %}
+                    <div class="route-stop">
+                        <div class="route-flag flag-wave">
+                            {% if stop.flag_image %}
+                                {% image stop.flag_image width-60 as flag %}
+                                <img src="{{ flag.url }}" alt="{{ stop|bi:'country_name' }}" />
+                            {% else %}
+                                {% with cname=stop|bi:"country_name" %}
+                                    {% if "افغانستان" in cname or "Afghanistan" in cname %}
+                                        <span class="flag-emoji">&#127462;&#127467;</span>
+                                    {% elif "قرغز" in cname or "Kyrgyz" in cname %}
+                                        <span class="flag-emoji">&#127472;&#127468;</span>
+                                    {% elif "تاجک" in cname or "Tajik" in cname %}
+                                        <span class="flag-emoji">&#127481;&#127471;</span>
+                                    {% elif "ازبک" in cname or "Uzbek" in cname %}
+                                        <span class="flag-emoji">&#127482;&#127487;</span>
+                                    {% elif "چین" in cname or "جین" in cname or "China" in cname %}
+                                        <span class="flag-emoji">&#127464;&#127475;</span>
+                                    {% elif "ایران" in cname or "Iran" in cname %}
+                                        <span class="flag-emoji">&#127470;&#127479;</span>
+                                    {% else %}
+                                        <span class="icon-fallback">&#9670;</span>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                        </div>
+                        <span>{{ stop|bi:"country_name" }}</span>
+                    </div>
+                    {% if not forloop.last %}<div class="route-arrow">&#8594;</div>{% endif %}
+                {% endfor %}
+            </div>
+            {% if page.route_notes.all %}
+            <ul class="route-notes">
+                {% for note in page.route_notes.all %}
+                    <li>&#128205; {{ note|bi:"text" }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- WHY CHOOSE US -->
+<section class="why-choose">
+    <div class="container">
+        <div class="section-heading" data-reveal>
+            <p class="eyebrow">{{ page|bi:"why_label" }}</p>
+            <h2>{{ page|bi:"why_title" }}</h2>
+        </div>
+        <div class="why-grid" data-reveal-group>
+            {% for item in page.why_choose_items.all %}
+                <div class="why-card" data-reveal style="--i:{{ forloop.counter0 }}">
+                    <div class="icon-circle">
+                        {% if item.icon %}
+                            {% image item.icon width-40 as wicon %}
+                            <img src="{{ wicon.url }}" alt="" />
+                        {% else %}
+                            <span class="icon-fallback">&#9670;</span>
+                        {% endif %}
+                    </div>
+                    <h3>{{ item|bi:"title" }}</h3>
+                    <p>{{ item|bi:"description" }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- PRODUCTS -->
+<section class="products">
+    <div class="container">
+        <div class="section-heading" data-reveal>
+            <div>
+                <p class="eyebrow">{{ page|bi:"products_label" }}</p>
+                <h2>{{ page|bi:"products_title" }}</h2>
+            </div>
+            {% if page.products_button_link %}
+            <a href="{{ page.products_button_link }}" class="btn btn-outline btn-sm">{{ page|bi:"products_button_text" }} <span class="arrow">&#8594;</span></a>
+            {% endif %}
+        </div>
+        <div class="products-grid" data-reveal-group>
+            {% for product in page.product_categories.all %}
+                <div class="product-card" data-reveal style="--i:{{ forloop.counter0 }}">
+                    {% if product.image %}
+                        {% image product.image width-400 as pimg %}
+                        <img src="{{ pimg.url }}" alt="{{ product|bi:'title' }}" />
+                    {% endif %}
+                    <span class="product-label">{{ product|bi:"title" }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- MEDIA GALLERY (photos + videos, fully admin-controlled) -->
+{% if page.media_gallery.all %}
+<section class="media-gallery" id="gallery">
+    <div class="container">
+        <div class="section-heading" data-reveal>
+            <p class="eyebrow">{{ page|bi:"gallery_label" }}</p>
+            <h2>{{ page|bi:"gallery_title" }}</h2>
+        </div>
+        <div class="gallery-grid" data-reveal-group>
+            {% for item in page.media_gallery.all %}
+                <div class="gallery-item" data-reveal style="--i:{{ forloop.counter0 }}">
+                    {% if item.media_type == "image" and item.image %}
+                        {% image item.image width-600 as gimg %}
+                        <img src="{{ gimg.url }}" alt="{{ item|bi:'caption' }}" loading="lazy" />
+                    {% elif item.media_type == "video_file" and item.video_file %}
+                        <video src="{{ item.video_file.url }}"
+                               {% if item.image %}poster="{% image item.image width-600 as gposter %}{{ gposter.url }}"{% endif %}
+                               controls playsinline preload="none"></video>
+                    {% elif item.media_type == "video_embed" and item.video_embed_url %}
+                        <iframe src="{{ item.video_embed_url }}" title="{{ item|bi:'caption' }}"
+                                allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
+                    {% endif %}
+                    {% if item|bi:"caption" %}
+                        <div class="gallery-caption">{{ item|bi:"caption" }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- TESTIMONIALS / CUSTOMER MESSAGES (fully admin-controlled) -->
+{% if page.testimonials.all %}
+<section class="testimonials" id="testimonials">
+    <div class="container">
+        <div class="section-heading" data-reveal>
+            <p class="eyebrow">{{ page|bi:"testimonials_label" }}</p>
+            <h2>{{ page|bi:"testimonials_title" }}</h2>
+        </div>
+        <div class="testimonial-grid" data-reveal-group>
+            {% for t in page.testimonials.all %}
+                <div class="testimonial-card" data-reveal style="--i:{{ forloop.counter0 }}">
+                    <div class="testimonial-header">
+                        {% if t.photo %}
+                            {% image t.photo fill-96x96 as tphoto %}
+                            <img src="{{ tphoto.url }}" alt="{{ t|bi:'client_name' }}" />
+                        {% endif %}
+                        <div>
+                            <div class="testimonial-name">{{ t|bi:"client_name" }}</div>
+                            {% if t|bi:"client_role" %}
+                                <div class="testimonial-role">{{ t|bi:"client_role" }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="stars" dir="ltr" style="--rating: {{ t.rating }};" aria-hidden="true">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+                    <p class="testimonial-message">{{ t|bi:"message" }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- CTA BANNER -->
+<section class="cta-banner">
+    {% if page.cta_background %}
+        {% image page.cta_background width-1600 as cta_bg %}
+        <img src="{{ cta_bg.url }}" alt="" class="cta-bg" />
+    {% endif %}
+    <div class="cta-overlay"></div>
+    <div class="container cta-inner" data-reveal>
+        <div>
+            <h2>{{ page|bi:"cta_title" }}</h2>
+            <p>{{ page|bi:"cta_description" }}</p>
+        </div>
+        <div class="cta-actions">
+            {% if branding.whatsapp_url %}
+            <a href="{{ branding.whatsapp_url }}" class="btn btn-primary" target="_blank" rel="noopener">
+                {% if IS_RTL %}واتساپ{% else %}WhatsApp Us{% endif %}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'home/js/hero-modern.js' %}" defer></script>
+{% endblock %}

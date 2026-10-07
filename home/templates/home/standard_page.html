@@ -1,0 +1,316 @@
+{% extends "home/base.html" %}
+{% load wagtailcore_tags wagtailimages_tags bilingual_tags %}
+
+{% block extra_css %}
+<style>
+    /* =========================================================
+       STANDARD PAGE — magazine-style layout.
+       All of this styles the OUTPUT of the RichText "body" field,
+       so editors just write normally in the Wagtail admin
+       (headings, paragraphs, images, quotes, and pasted
+       YouTube/Vimeo links for video) and get this design and
+       these animations automatically — no manual HTML needed.
+       ========================================================= */
+
+    /* ---- Banner: animated gradient + slow image zoom ---------------- */
+    .page-banner{
+        position: relative;
+        overflow: hidden;
+        min-height: 340px;
+        display: flex;
+        align-items: center;
+        isolation: isolate;
+    }
+    .page-banner-bg{
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: -2;
+        animation: banner-zoom 14s ease-in-out infinite alternate;
+    }
+    @keyframes banner-zoom{
+        0%   { transform: scale(1); }
+        100% { transform: scale(1.08); }
+    }
+    .page-banner-video-wrap{
+        position: absolute;
+        inset: 0;
+        z-index: -2;
+        overflow: hidden;
+    }
+    .page-banner-video{
+        position: absolute;
+        top: 50%; left: 50%;
+        width: 100%; height: 100%;
+        min-width: 100%; min-height: 100%;
+        transform: translate(-50%, -50%) scale(1.15);
+        border: 0;
+        pointer-events: none;
+    }
+
+    .page-banner-overlay{
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background:
+            linear-gradient(120deg, rgba(6,10,9,.72) 0%, rgba(6,10,9,.40) 45%, rgba(6,10,9,.15) 100%),
+            linear-gradient(0deg, var(--color-primary-dark,#048136) 0%, transparent 120%);
+        opacity: .92;
+    }
+    .page-banner-inner h1{
+        color: #fff;
+        font-size: clamp(1.8rem, 3vw, 2.6rem);
+        margin-bottom: .4rem;
+        text-shadow: 0 3px 18px rgba(0,0,0,.4);
+    }
+    .page-banner-inner p{
+        color: #eafff2;
+        font-size: 1.05rem;
+        max-width: 640px;
+        text-shadow: 0 2px 12px rgba(0,0,0,.35);
+    }
+    .page-banner-inner{ padding-block: 3.5rem; }
+
+    /* ---- Body section shell ------------------------------------------ */
+    .page-body{
+        padding-block: 3.5rem;
+        position: relative;
+    }
+    .page-body .rich-text{
+        max-width: 780px;
+        margin-inline: auto;
+        font-size: 1.05rem;
+        line-height: 1.9;
+        color: #1c231f;
+    }
+
+    /* ---- Headings: accent bar + fade/slide in on scroll -------------- */
+    .rich-text h2,
+    .rich-text h3,
+    .rich-text h4{
+        position: relative;
+        margin: 2.4rem 0 1rem;
+        padding-inline-start: 1rem;
+        opacity: 0;
+        transform: translateY(16px);
+        animation: block-in .6s cubic-bezier(.22,1,.36,1) forwards;
+        animation-timeline: view();
+        animation-range: entry 0% cover 25%;
+    }
+    .rich-text h2::before,
+    .rich-text h3::before{
+        content:"";
+        position:absolute;
+        top:.15em; bottom:.15em;
+        inset-inline-start: 0;
+        width: 5px;
+        border-radius: 4px;
+        background: linear-gradient(180deg, var(--color-primary,#16a34a), var(--color-secondary, #d4af37));
+    }
+    .rich-text h2{ font-size: 1.55rem; }
+    .rich-text h3{ font-size: 1.25rem; color: var(--color-primary-dark, #048136); }
+
+    /* ---- Paragraphs: gentle staggered fade-in ------------------------ */
+    .rich-text p{
+        margin: 1rem 0;
+        opacity: 0;
+        transform: translateY(10px);
+        animation: block-in .6s cubic-bezier(.22,1,.36,1) forwards;
+        animation-timeline: view();
+        animation-range: entry 0% cover 20%;
+    }
+
+    /* ---- Images: alternating "magazine" float with framed card ------- */
+    .rich-text img{
+        max-width: 100%;
+        height: auto;
+        border-radius: 16px;
+        box-shadow: 0 16px 34px rgba(4,129,54,.16);
+        border: 1px solid rgba(4,129,54,.12);
+        transition: transform .4s ease, box-shadow .4s ease;
+        margin: 1.5rem 0;
+    }
+    .rich-text img:hover{
+        transform: scale(1.015) translateY(-3px);
+        box-shadow: 0 22px 42px rgba(4,129,54,.24);
+    }
+    /* Full-width images (Wagtail's "richtext-image full-width") get extra
+       breathing room and a subtle reveal-from-below animation */
+    .rich-text .richtext-image.full-width{
+        display: block;
+        width: 100%;
+        opacity: 0;
+        transform: translateY(24px) scale(.98);
+        animation: block-in .7s cubic-bezier(.22,1,.36,1) forwards;
+        animation-timeline: view();
+        animation-range: entry 0% cover 25%;
+    }
+    /* Left/right aligned images alternate the "float card" look and pair
+       nicely with the text wrapping around them */
+    .rich-text .richtext-image.left{
+        float: inline-start;
+        max-width: 46%;
+        margin-inline-end: 1.5rem;
+    }
+    .rich-text .richtext-image.right{
+        float: inline-end;
+        max-width: 46%;
+        margin-inline-start: 1.5rem;
+    }
+    @media (max-width: 640px){
+        .rich-text .richtext-image.left,
+        .rich-text .richtext-image.right{
+            float: none;
+            max-width: 100%;
+            margin-inline: 0;
+        }
+    }
+
+    /* ---- Embedded video (pasted YouTube/Vimeo link in the editor) ---- */
+    .rich-text .responsive-object,
+    .rich-text .embed-block{
+        position: relative;
+        width: 100%;
+        max-width: 100%;
+        aspect-ratio: 16 / 9;
+        margin: 2rem 0;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 20px 40px rgba(4,129,54,.22);
+        border: 3px solid #fff;
+        outline: 1px solid rgba(4,129,54,.18);
+        opacity: 0;
+        transform: translateY(20px);
+        animation: block-in .7s cubic-bezier(.22,1,.36,1) forwards;
+        animation-timeline: view();
+        animation-range: entry 0% cover 25%;
+    }
+    .rich-text .responsive-object iframe,
+    .rich-text .embed-block iframe{
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+    }
+
+    /* ---- Blockquotes: card with a large decorative quote mark -------- */
+    .rich-text blockquote{
+        position: relative;
+        margin: 2rem 0;
+        padding: 1.4rem 1.6rem 1.4rem 2.4rem;
+        background: #f3fbf6;
+        border-inline-start: 4px solid var(--color-primary, #16a34a);
+        border-radius: 12px;
+        font-style: italic;
+        color: #0f3d24;
+        opacity: 0;
+        transform: translateY(14px);
+        animation: block-in .6s cubic-bezier(.22,1,.36,1) forwards;
+        animation-timeline: view();
+        animation-range: entry 0% cover 25%;
+    }
+    .rich-text blockquote::before{
+        content: "\201C";
+        position: absolute;
+        top: -.2rem;
+        inset-inline-start: .6rem;
+        font-size: 2.6rem;
+        line-height: 1;
+        color: var(--color-secondary, #d4af37);
+        font-family: Georgia, serif;
+    }
+
+    /* ---- Lists: custom animated bullet ------------------------------- */
+    .rich-text ul{
+        list-style: none;
+        padding-inline-start: 0;
+        margin: 1.2rem 0;
+    }
+    .rich-text ul li{
+        position: relative;
+        padding-inline-start: 1.6rem;
+        margin: .55rem 0;
+    }
+    .rich-text ul li::before{
+        content:"";
+        position:absolute;
+        inset-inline-start: 0;
+        top: .5em;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--color-primary, #16a34a);
+        box-shadow: 0 0 0 3px rgba(22,163,74,.18);
+    }
+    .rich-text ol{ padding-inline-start: 1.4rem; margin: 1.2rem 0; }
+    .rich-text ol li{ margin: .5rem 0; }
+
+    /* ---- Links inside body text --------------------------------------- */
+    .rich-text a:not(.btn){
+        color: var(--color-primary-dark, #048136);
+        font-weight: 600;
+        text-decoration: underline;
+        text-decoration-thickness: 1.5px;
+        text-underline-offset: 3px;
+        transition: color .2s ease;
+    }
+    .rich-text a:not(.btn):hover{ color: var(--color-secondary, #d4af37); }
+
+    @keyframes block-in{
+        to{ opacity: 1; transform: none; }
+    }
+
+    /* Fallback for browsers without scroll-driven animation support
+       (animation-timeline): show everything immediately, no motion lost. */
+    @supports not (animation-timeline: view()){
+        .rich-text h2, .rich-text h3, .rich-text h4,
+        .rich-text p, .rich-text .richtext-image.full-width,
+        .rich-text .responsive-object, .rich-text .embed-block,
+        .rich-text blockquote{
+            opacity: 1;
+            transform: none;
+            animation: none;
+        }
+    }
+    @media (prefers-reduced-motion: reduce){
+        .page-banner-bg{ animation: none; }
+        .rich-text h2, .rich-text h3, .rich-text h4,
+        .rich-text p, .rich-text .richtext-image.full-width,
+        .rich-text .responsive-object, .rich-text .embed-block,
+        .rich-text blockquote{
+            opacity: 1;
+            transform: none;
+            animation: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="page-banner">
+    {% if page.banner_image %}
+        {% image page.banner_image width-1600 as banner %}
+        <img src="{{ banner.url }}" alt="{{ page.title }}" class="page-banner-bg" />
+    {% endif %}
+    {% if page.banner_video_embed_url %}
+        <div class="page-banner-video-wrap" aria-hidden="true">
+            <iframe class="page-banner-video" src="{{ page.banner_video_embed_url }}"
+                    title="{{ page.title }}" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        </div>
+    {% endif %}
+    <div class="page-banner-overlay"></div>
+    <div class="container page-banner-inner reveal">
+        <h1>{{ page.title }}</h1>
+        {% if page|bi:"intro" %}<p>{{ page|bi:"intro" }}</p>{% endif %}
+    </div>
+</section>
+
+<section class="page-body">
+    <div class="container reveal">
+        <div class="rich-text">{{ page|bi:"body"|richtext }}</div>
+    </div>
+</section>
+{% endblock %}

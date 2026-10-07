@@ -1,0 +1,206 @@
+/* =========================================================
+   MODERN THEME OVERRIDE — Green & Black
+   Load this AFTER style.css so these rules win.
+   ========================================================= */
+
+:root{
+    --color-primary:#16a34a;       /* main green */
+    --color-primary-dark:#048136;  /* deep green (hover/dark accents) */
+    --color-primary-light:#4ade80; /* light green (highlights) */
+    --color-dark:#2a5c47;          /* near-black */
+    --color-dark-soft:#161616;     /* soft black for panels */
+    --color-light:#f5f9f6;         /* page background */
+}
+
+body{ background: var(--color-light); }
+.accent{ color: var(--color-primary); }
+
+/* Buttons */
+.btn-primary{ background: var(--color-primary); border-color: var(--color-primary); color:#fff; }
+.btn-primary:hover{ background: var(--color-primary-dark); border-color: var(--color-primary-dark); }
+.btn-outline{ border-color: var(--color-dark); color: var(--color-dark); }
+.btn-outline:hover{ background: var(--color-dark); color:#fff; border-color: var(--color-dark); }
+
+/* Header / Nav */
+.site-header{ background: var(--color-dark); }
+.main-nav a{ color:#e5e7eb; }
+.main-nav a.active,
+.main-nav a:hover{ color: var(--color-primary-light); }
+.lang-switch a.active{ color: var(--color-primary-light); }
+.hamburger span{ background:#e5e7eb; }
+
+/* Hero */
+.hero-overlay{
+    background: linear-gradient(180deg, rgba(10,10,10,.78) 0%, rgba(10,10,10,.32) 55%, rgba(10,10,10,.88) 100%);
+}
+.hero-badge{ background: var(--color-primary); color:#fff; }
+
+/* Icons */
+.icon-badge, .icon-circle{ background: var(--color-dark); color: var(--color-primary-light); }
+.icon-fallback{ color: var(--color-primary-light); }
+
+/* Cards */
+.service-card, .highlight-card, .why-card, .product-card{
+    border:1px solid rgba(22,163,74,.15);
+    transition: transform .25s ease, box-shadow .25s ease;
+}
+.service-card:hover, .why-card:hover, .highlight-card:hover, .product-card:hover{
+    box-shadow:0 14px 32px rgba(22,163,74,.18);
+    transform: translateY(-4px);
+}
+
+/* CTA / Footer */
+.cta-banner{ background: var(--color-dark); }
+.cta-overlay{ background: linear-gradient(120deg, rgba(10,10,10,.92), rgba(15,92,46,.78)); }
+.site-footer{ background: var(--color-dark); color:#d1d5db; }
+.site-footer .accent{ color: var(--color-primary-light); }
+.whatsapp-float{ background:#16a34a; }
+
+/* =========================================================
+   HERO TRUCK ANIMATION
+   ========================================================= */
+.hero-truck-anim{
+    position:absolute;
+    left:0; right:0; bottom:14px;
+    height:120px;
+    overflow:hidden;
+    pointer-events:none;
+    z-index:2;
+}
+.truck-svg{
+    position:absolute;
+    bottom:16px;
+    left:0;
+    width:190px;
+    height:auto;
+    filter: drop-shadow(0 6px 6px rgba(0,0,0,.35));
+    animation: drive-across 9s linear infinite;
+}
+[dir="rtl"] .truck-svg{ animation-name: drive-across-rtl; }
+
+@keyframes drive-across{
+    0%   { transform: translateX(-240px); }
+    100% { transform: translateX(105vw); }
+}
+@keyframes drive-across-rtl{
+    0%   { transform: translateX(105vw) scaleX(-1); }
+    100% { transform: translateX(-240px) scaleX(-1); }
+}
+
+.truck-wheel{ animation: wheel-spin .5s linear infinite; }
+@keyframes wheel-spin{ to{ transform: rotate(360deg); } }
+
+.truck-road{
+    position:absolute;
+    left:0; right:0; bottom:10px;
+    height:3px;
+    background: repeating-linear-gradient(90deg, rgba(255,255,255,.55) 0 26px, transparent 26px 52px);
+    opacity:.55;
+}
+
+/* =========================================================
+   ROUTE FLAGS — wave animation + arrow flow
+   ========================================================= */
+.route-flag{ display:flex; align-items:center; justify-content:center; }
+.flag-wave{
+    transform-origin: 30% 90%;
+    animation: flag-wave 2.4s ease-in-out infinite;
+}
+.flag-wave img{ display:block; border-radius:3px; box-shadow:0 2px 6px rgba(0,0,0,.25); }
+.flag-emoji{ font-size:2.1rem; line-height:1; display:inline-block; }
+
+@keyframes flag-wave{
+    0%,100%{ transform: rotate(0deg); }
+    25%    { transform: rotate(-7deg); }
+    75%    { transform: rotate(7deg); }
+}
+
+.route-arrow-anim{ color: var(--color-primary); animation: arrow-flow 1.6s ease-in-out infinite; }
+@keyframes arrow-flow{
+    0%,100%{ transform: translateX(0); opacity:.6; }
+    50%    { transform: translateX(6px); opacity:1; }
+}
+[dir="rtl"] .route-arrow-anim{ animation-name: arrow-flow-rtl; }
+@keyframes arrow-flow-rtl{
+    0%,100%{ transform: translateX(0) scaleX(-1); opacity:.6; }
+    50%    { transform: translateX(-6px) scaleX(-1); opacity:1; }
+}
+
+/* =========================================================
+   SERVICE "FRAME FOR WRITING" — replaces plain photo box
+   ========================================================= */
+.service-frame{
+    position:relative;
+    min-height:180px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    background: linear-gradient(135deg, var(--color-dark) 0%, var(--color-dark-soft) 100%);
+    border:1px solid rgba(74,222,128,.25);
+}
+.service-frame img{ width:100%; height:100%; object-fit:cover; }
+.frame-corner{ position:absolute; width:22px; height:22px; border:2px solid var(--color-primary-light); }
+.corner-tl{ top:8px; left:8px; border-right:none; border-bottom:none; }
+.corner-tr{ top:8px; right:8px; border-left:none; border-bottom:none; }
+.corner-bl{ bottom:8px; left:8px; border-right:none; border-top:none; }
+.corner-br{ bottom:8px; right:8px; border-left:none; border-top:none; }
+.frame-index{
+    position:absolute;
+    font-family:'Inter', sans-serif;
+    font-size:2.6rem;
+    font-weight:800;
+    color: rgba(74,222,128,.18);
+}
+.frame-text{
+    position:relative;
+    z-index:1;
+    color:#eafff2;
+    font-weight:700;
+    font-size:1.05rem;
+    text-align:center;
+    padding:0 20px;
+}
+
+/* =========================================================
+   NAVBAR REDESIGN — light green background, dark readable text
+   (Loaded last, so these rules win over the dark-header rules
+   above and in modern-theme.css)
+   ========================================================= */
+:root{
+    --color-navbar-bg-top:#eafbf1;     /* very light green */
+    --color-navbar-bg-bottom:#d7f3e2;  /* slightly deeper light green */
+    --color-navbar-text:#0f3d24;       /* dark green, for the site name / body text */
+    --color-navbar-text-muted:#3a7156; /* softer dark green, for slogan / lang switch */
+}
+
+.site-header{
+    background: linear-gradient(180deg, var(--color-navbar-bg-top) 0%, var(--color-navbar-bg-bottom) 100%);
+    border-bottom: 1px solid rgba(4,129,54,.18);
+    box-shadow: 0 2px 16px rgba(4,129,54,.10);
+}
+
+.header-inner .brand-text strong{ color: var(--color-navbar-text); }
+.header-inner .brand-text small{ color: var(--color-navbar-text-muted); }
+.header-inner .brand-text .accent{ color: var(--color-primary-dark); }
+
+.main-nav a{
+    color: var(--color-navbar-text);
+    font-weight:600;
+    padding:8px 14px;
+    border-radius:999px;
+    transition: background .2s ease, color .2s ease, transform .15s ease;
+}
+.main-nav a.active,
+.main-nav a:hover{
+    color:#fff;
+    background: var(--color-primary);
+    transform: translateY(-1px);
+}
+
+.lang-switch a{ color: var(--color-navbar-text-muted); }
+.lang-switch a.active{ color: var(--color-primary-dark); font-weight:700; }
+.lang-switch span{ color: rgba(15,61,36,.35); }
+
+.hamburger span{ background: var(--color-navbar-text); }

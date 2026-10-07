@@ -1,0 +1,294 @@
+{% load static wagtailcore_tags wagtailimages_tags bilingual_tags nav_tags number_tags %}
+<!DOCTYPE html>
+<html lang="{{ CURRENT_LANG }}" dir="{{ TEXT_DIR }}">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}{{ page.title }} | {{ branding|bi:"site_name" }} {{ branding|bi:"site_tagline" }}{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}{{ branding|bi:"footer_about" }}{% endblock %}" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{% static 'home/css/style.css' %}" />
+    <!-- Modern green & black theme override + animations -->
+    <link rel="stylesheet" href="{% static 'home/css/modern-theme.css' %}" />
+    <!-- New: motion, glow lighting, Afghan-flag accent, rebuilt services grid -->
+    <link rel="stylesheet" href="{% static 'home/css/modern-theme-additions.css' %}" />
+    {% block extra_css %}{% endblock %}
+    <style>
+        /* Larger, more prominent logo + site name in the header */
+        .header-inner .brand { display: flex; align-items: center; gap: 14px; }
+        .header-inner .brand-logo { height: 64px; width: auto; }
+        .header-inner .brand-text strong { font-size: 1.5rem; line-height: 1.2; }
+        .header-inner .brand-text small { font-size: 0.9rem; }
+        @media (max-width: 640px) {
+            .header-inner .brand-logo { height: 48px; }
+            .header-inner .brand-text strong { font-size: 1.15rem; }
+        }
+
+        /* =========================================================
+           MODERN ANIMATIONS + GREEN GLOW ("چراغ سبز") LAYER
+           Self-contained here so it works even without touching
+           modern-theme.css / modern-theme-additions.css
+           ========================================================= */
+
+        /* Shimmering tricolor accent bar */
+        .flag-accent-bar{
+            height:4px;
+            background: linear-gradient(90deg,
+                var(--color-dark, #0a0a0a) 0%,
+                var(--color-primary, #16a34a) 50%,
+                var(--color-dark, #0a0a0a) 100%);
+            background-size: 200% 100%;
+            animation: shimmer-bar 4s ease-in-out infinite;
+        }
+        @keyframes shimmer-bar{
+            0%   { background-position: 0% 0; }
+            50%  { background-position: 100% 0; }
+            100% { background-position: 0% 0; }
+        }
+
+        /* Header entrance animation */
+        .site-header{
+            animation: header-drop .6s cubic-bezier(.22,1,.36,1) both;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        @keyframes header-drop{
+            from{ transform: translateY(-16px); opacity:0; }
+            to  { transform: translateY(0); opacity:1; }
+        }
+
+        /* Logo hover glow */
+        .header-inner .brand{ transition: transform .25s ease; }
+        .header-inner .brand:hover{ transform: translateY(-1px); }
+        .header-inner .brand-logo{
+            transition: filter .3s ease, transform .3s ease;
+        }
+        .header-inner .brand:hover .brand-logo{
+            filter: drop-shadow(0 0 10px rgba(22,163,74,.65));
+            transform: scale(1.04);
+        }
+
+        /* Nav links: animated underline sweep */
+        .main-nav a{
+            position: relative;
+            overflow: hidden;
+        }
+        .main-nav a::after{
+            content:"";
+            position:absolute;
+            left:50%; right:50%;
+            bottom:2px;
+            height:2px;
+            background: var(--color-primary-light, #4ade80);
+            border-radius:2px;
+            transition: left .25s ease, right .25s ease;
+        }
+        .main-nav a:hover::after,
+        .main-nav a.active::after{
+            left:10%; right:10%;
+        }
+
+        /* "Online now" pulsing green light, next to the brand name */
+        .online-indicator{
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+            margin-inline-start:10px;
+            font-size:.72rem;
+            font-weight:600;
+            letter-spacing:.02em;
+            color: var(--color-primary-light, #4ade80);
+            vertical-align: middle;
+        }
+        .online-indicator .dot{
+            width:9px;
+            height:9px;
+            border-radius:50%;
+            background: var(--color-primary, #16a34a);
+            box-shadow: 0 0 0 0 rgba(22,163,74,.65);
+            animation: pulse-glow 1.8s ease-out infinite;
+        }
+        @keyframes pulse-glow{
+            0%   { box-shadow: 0 0 0 0 rgba(22,163,74,.65); }
+            70%  { box-shadow: 0 0 0 9px rgba(22,163,74,0); }
+            100% { box-shadow: 0 0 0 0 rgba(22,163,74,0); }
+        }
+        @media (max-width: 640px){
+            .online-indicator{ display:none; }
+        }
+
+        /* Language switch + hamburger: subtle glow on active/hover */
+        .lang-switch a{ transition: color .2s ease, text-shadow .2s ease; }
+        .lang-switch a:hover,
+        .lang-switch a.active{ text-shadow: 0 0 8px rgba(22,163,74,.55); }
+
+        .hamburger{ transition: transform .2s ease; }
+        .hamburger:hover{ transform: scale(1.08); }
+
+        /* Footer social icons: glowing ring on hover */
+        .footer-socials a{
+            position:relative;
+            transition: transform .25s ease, box-shadow .25s ease, color .25s ease;
+        }
+        .footer-socials a:hover{
+            transform: translateY(-3px);
+            box-shadow: 0 0 14px rgba(74,222,128,.55);
+            color: var(--color-primary-light, #4ade80);
+        }
+
+        /* WhatsApp float: pulsing green glow ring */
+        .whatsapp-float{
+            animation: pulse-glow-strong 2.2s ease-out infinite;
+        }
+        @keyframes pulse-glow-strong{
+            0%   { box-shadow: 0 0 0 0 rgba(22,163,74,.55); }
+            70%  { box-shadow: 0 0 0 16px rgba(22,163,74,0); }
+            100% { box-shadow: 0 0 0 0 rgba(22,163,74,0); }
+        }
+
+        /* Force phone numbers / any LTR numeric string to render left-to-right
+           even inside RTL paragraphs, so digits and the + sign never get
+           visually reversed by the browser's bidi algorithm. */
+        .ltr-number{
+            direction: ltr;
+            unicode-bidi: isolate;
+            display: inline-block;
+        }
+
+        /* Respect users who prefer reduced motion */
+        @media (prefers-reduced-motion: reduce){
+            .flag-accent-bar,
+            .site-header,
+            .online-indicator .dot,
+            .whatsapp-float{
+                animation: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="{% if IS_RTL %}rtl{% else %}ltr{% endif %}">
+
+<!-- animated tricolor accent line: black / green shimmer -->
+<div class="flag-accent-bar" aria-hidden="true"></div>
+
+<header class="site-header" id="siteHeader">
+    <div class="container header-inner">
+        <a href="#" class="brand">
+            {% if branding.logo %}
+                {% image branding.logo width-100 as logo_img %}
+                <img src="{{ logo_img.url }}" alt="{{ branding|bi:'site_name' }}" class="brand-logo" />
+            {% else %}
+                <img src="{% static 'home/images/logo.jpg' %}" alt="{{ branding|bi:'site_name'|default:'Hanif Aimaq' }}" class="brand-logo" />
+            {% endif %}
+            <span class="brand-text">
+                <strong>
+                    {{ branding|bi:"site_name" }} <span class="accent">{{ branding|bi:"site_tagline" }}</span>
+                </strong>
+                <small>{{ branding|bi:"site_slogan" }}</small>
+            </span>
+        </a>
+
+        <nav class="main-nav" id="mainNav">
+            <a href="/" class="{% if page.url == '/' %}active{% endif %}">{% if IS_RTL %}{% else %}{% endif %}</a>
+            {% get_nav_items as nav_items %}
+            {% for item in nav_items %}
+                <a href="{{ item.url }}">{{ item|bi:"title" }}</a>
+            {% endfor %}
+        </nav>
+        
+        <div class="header-actions">
+            <!-- "Get Quote" button removed per request -->
+            <div class="lang-switch">
+                <a href="{% url 'home:set_language' %}?lang=en" class="{% if CURRENT_LANG == 'en' %}active{% endif %}">EN</a>
+                <span>/</span>
+                <a href="{% url 'home:set_language' %}?lang=fa" class="{% if CURRENT_LANG == 'fa' %}active{% endif %}">فا</a>
+            </div>
+            
+            <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </div>
+</header>
+
+<main>
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+    <div class="container footer-grid">
+        <div class="footer-brand">
+            <div class="brand">
+                {% if branding.logo %}
+                    {% image branding.logo width-100 as flogo %}
+                    <img src="{{ flogo.url }}" alt="{{ branding|bi:'site_name' }}" class="brand-logo" />
+                {% else %}
+                    <img src="{% static 'home/images/logo.jpg' %}" alt="{{ branding|bi:'site_name'|default:'Hanif Aimaq' }}" class="brand-logo" />
+                {% endif %}
+                <span class="brand-text">
+                    <strong>{{ branding|bi:"site_name" }} <span class="accent">{{ branding|bi:"site_tagline" }}</span></strong>
+                    <small>{{ branding|bi:"site_slogan" }}</small>
+                </span>
+            </div>
+            <div class="footer-socials">
+                {% if branding.facebook_url %}<a href="{{ branding.facebook_url }}" aria-label="Facebook" target="_blank" rel="noopener">f</a>{% endif %}
+                {% if branding.linkedin_url %}<a href="{{ branding.linkedin_url }}" aria-label="LinkedIn" target="_blank" rel="noopener">in</a>{% endif %}
+                {% if branding.instagram_url %}<a href="{{ branding.instagram_url }}" aria-label="Instagram" target="_blank" rel="noopener">ig</a>{% endif %}
+                {% if branding.whatsapp_url %}<a href="{{ branding.whatsapp_url }}" aria-label="WhatsApp" target="_blank" rel="noopener">wa</a>{% endif %}
+                {% if branding.youtube_url %}<a href="{{ branding.youtube_url }}" aria-label="YouTube" target="_blank" rel="noopener">yt</a>{% endif %}
+            </div>
+        </div>
+
+        <div class="footer-col">
+            <h4>{% if IS_RTL %}لینک‌های سریع{% else %}Quick Links{% endif %}</h4>
+            <ul>
+                <li><a href="/">{% if IS_RTL %}خانه{% else %}Home{% endif %}</a></li>
+                {% for link in branding.footer_links.all %}
+                    <li><a href="{{ link.url }}">{{ link|bi:"title" }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="footer-col">
+            <h4>{% if IS_RTL %}اطلاعات تماس{% else %}Contact Info{% endif %}</h4>
+            <ul class="footer-contact">
+                <li>{{ branding|bi:"address" }}</li>
+                <li><span class="ltr-number" dir="ltr">{% if IS_RTL %}{{ branding.phone_1|fa_digits }}{% else %}{{ branding.phone_1 }}{% endif %}</span></li>
+                {% if branding.phone_2 %}
+                <li><span class="ltr-number" dir="ltr">{% if IS_RTL %}{{ branding.phone_2|fa_digits }}{% else %}{{ branding.phone_2 }}{% endif %}</span></li>
+                {% endif %}
+                <li>{{ branding.email }}</li>
+            </ul>
+        </div>
+    </div>
+    <div class="container footer-bottom">
+        <p>{{ branding|bi:"copyright_text" }}</p>
+        <div class="footer-legal">
+            <a href="#">{% if IS_RTL %}حریم خصوصی{% else %}Privacy Policy{% endif %}</a>
+            <a href="#">{% if IS_RTL %}شرایط استفاده{% else %}Terms & Conditions{% endif %}</a>
+        </div>
+    </div>
+</footer>
+{% if branding.instagram_url %}
+<a href="{{ branding.instagram_url }}" aria-label="Instagram" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+        <path d="M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 2 .3 2.4.5.6.2 1 .5 1.5 1 .4.4.7.8 1 1.5.2.5.4 1.2.5 2.4.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.3 2-.5 2.4-.2.6-.5 1-1 1.5-.4.4-.8.7-1.5 1-.5.2-1.2.4-2.4.5-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-2-.3-2.4-.5-.6-.2-1-.5-1.5-1-.4-.4-.7-.8-1-1.5-.2-.5-.4-1.2-.5-2.4C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.3-2 .5-2.4.2-.6.5-1 1-1.5.4-.4.8-.7 1.5-1 .5-.2 1.2-.4 2.4-.5C8.4 2.2 8.8 2.2 12 2.2zm0 1.8c-3.1 0-3.5 0-4.7.1-1 .1-1.6.2-2 .4-.5.2-.8.4-1.2.8-.4.4-.6.7-.8 1.2-.1.4-.3 1-.4 2C3 9.5 3 9.9 3 13s0 3.5.1 4.7c.1 1 .2 1.6.4 2 .2.5.4.8.8 1.2.4.4.7.6 1.2.8.4.1 1 .3 2 .4 1.2.1 1.6.1 4.7.1s3.5 0 4.7-.1c1-.1 1.6-.2 2-.4.5-.2.8-.4 1.2-.8.4-.4.6-.7.8-1.2.1-.4.3-1 .4-2 .1-1.2.1-1.6.1-4.7s0-3.5-.1-4.7c-.1-1-.2-1.6-.4-2-.2-.5-.4-.8-.8-1.2-.4-.4-.7-.6-1.2-.8-.4-.1-1-.3-2-.4-1.2-.1-1.6-.1-4.7-.1z"/>
+        <path d="M12 7.4a4.6 4.6 0 1 0 0 9.2 4.6 4.6 0 0 0 0-9.2zm0 7.6a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+        <circle cx="17.4" cy="6.6" r="1.1"/>
+    </svg>
+</a>
+{% endif %}
+{% if branding.whatsapp_url %}
+<a href="{{ branding.whatsapp_url }}" class="whatsapp-float" aria-label="WhatsApp Us" target="_blank" rel="noopener">
+    <svg viewBox="0 0 32 32" width="28" height="28" fill="currentColor"><path d="M16 3C9.4 3 4 8.4 4 15c0 2.3.6 4.4 1.7 6.3L4 29l7.9-1.6c1.8.9 3.9 1.4 6.1 1.4 6.6 0 12-5.4 12-12S22.6 3 16 3zm0 21.8c-2 0-3.9-.5-5.5-1.5l-.4-.2-4.7 1 1-4.6-.3-.4C4.9 17.6 4.4 15.8 4.4 15 4.4 9.1 9.6 4 16 4c6.4 0 11.6 5.1 11.6 11S22.4 24.8 16 24.8z"/></svg>
+</a>
+{% endif %}
+
+<script src="{% static 'home/js/main.js' %}" defer></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>
