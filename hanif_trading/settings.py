@@ -6,17 +6,31 @@ Bilingual (English / Persian) trade & logistics site.
 import os
 from pathlib import Path
 
+import dj_database_url
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-insecure-secret-key-change-me")
 
 DEBUG = os.environ.get("DJANGO_DEBUG", "true").lower() == "true"
 
-ALLOWED_HOSTS = os.environ.get("www.hanifaimaq.com", "*").split(",")
+ALLOWED_HOSTS = [
+    "www.hanifaimaq.com",
+    "hanifaimaq.com",
+    ".onrender.com",
+    "localhost",
+    "127.0.0.1",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://www.hanifaimaq.com",
+    "https://hanifaimaq.com",
+    "https://*.onrender.com",
+]
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 INSTALLED_APPS = [
-   
-
     "wagtail.contrib.forms",
     "wagtail.contrib.redirects",
     "wagtail.contrib.settings",
@@ -32,7 +46,7 @@ INSTALLED_APPS = [
 
     "modelcluster",
     "taggit",
-    'home.apps.HomeConfig',
+    "home.apps.HomeConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -43,6 +57,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # serves static files on Render
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",  # enables per-request fa/en switching
     "django.middleware.common.CommonMiddleware",
@@ -75,9 +90,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "hanif_trading.wsgi.application"
 
-import os
-import dj_database_url
-
+# ---------------------------------------------------------------------------
+# Database (Neon PostgreSQL via DATABASE_URL environment variable)
+# ---------------------------------------------------------------------------
 DATABASES = {
     "default": dj_database_url.config(
         default=os.environ.get("DATABASE_URL"),
@@ -85,6 +100,7 @@ DATABASES = {
         conn_health_checks=True,
     )
 }
+
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -109,9 +125,17 @@ LOCALE_PATHS = [BASE_DIR / "locale"]
 
 RTL_LANGUAGES = ["fa"]
 
+# ---------------------------------------------------------------------------
+# Static and media files
+# ---------------------------------------------------------------------------
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "home" / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+}
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
