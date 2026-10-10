@@ -12,7 +12,7 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-insecure-secret-key-change
 
 DEBUG = os.environ.get("DJANGO_DEBUG", "true").lower() == "true"
 
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "*").split(",")
+ALLOWED_HOSTS = os.environ.get("www.hanifaimaq.com", "*").split(",")
 
 INSTALLED_APPS = [
    
