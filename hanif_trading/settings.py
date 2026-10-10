@@ -3,6 +3,7 @@ Django/Wagtail settings for Hanif Aimaq Trading Ltd website.
 Bilingual (English / Persian) trade & logistics site.
 """
 
+import dj_database_url
 import os
 from pathlib import Path
 
@@ -75,8 +76,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "hanif_trading.wsgi.application"
 
+
 DATABASES = {
-    "default": {
+    "default": dj_database_url.config(
+        default=os.environ.get("DATABASE_URL"),
+        conn_max_age=600,
+        conn_health_checks=True,
+    ){
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
     }
