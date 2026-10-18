@@ -158,3 +158,27 @@ EMAIL_BACKEND = os.environ.get(
 CONTACT_FORM_RECIPIENT = os.environ.get("CONTACT_FORM_RECIPIENT", "info@hanifaimaq.com")
 
 SILENCED_SYSTEM_CHECKS = ["urls.W005"]
+
+import os
+ 
+# Where customer messages are delivered
+CONTACT_FORM_RECIPIENT = "founder@hanifaimaq.com"
+ 
+# Sender address (must be verified in Brevo)
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "founder@hanifaimaq.com")
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+ 
+# Brevo over HTTPS (Render's free plan blocks normal SMTP ports)
+if "anymail" not in INSTALLED_APPS:
+    INSTALLED_APPS += ["anymail"]
+ 
+EMAIL_BACKEND = "anymail.backends.sendinblue.EmailBackend"
+ANYMAIL = {
+    "SENDINBLUE_API_KEY": os.environ.get("BREVO_API_KEY", ""),
+}
+ 
+# Needed so the site works on your domain behind Render's proxy
+ALLOWED_HOSTS = ["www.hanifaimaq.com", "hanifaimaq.com", ".onrender.com"]
+CSRF_TRUSTED_ORIGINS = ["https://www.hanifaimaq.com", "https://hanifaimaq.com"]
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+ 
