@@ -1,19 +1,19 @@
 {% extends "home/base.html" %}
-{% load static wagtailcore_tags wagtailimages_tags bilingual_tags %}
+{% load static l10n wagtailcore_tags wagtailimages_tags bilingual_tags number_tags %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'home/css/hero-modern.css' %}" />
+<!-- Marks the page as "JS available" before first paint, so reveal-animations never flash -->
+<script>document.documentElement.classList.add('fx-js');</script>
 <style>
     /* ------------------------------------------------------------------
-       THEME COLORS — pulled from Wagtail admin (Settings -> Site Branding
-       & Settings -> Theme Colors). Change them there; this block just
-       turns whatever is saved into CSS variables the rest of the site's
-       stylesheet(s) can use, e.g. color: var(--color-primary);
+       THEME COLORS — pulled from Wagtail admin (Settings -> Theme Colors).
+       Defaults now match the green/black site theme.
        ------------------------------------------------------------------ */
     :root {
-        --color-primary: {{ branding.primary_color|default:"#0b3d91" }};
+        --color-primary: {{ branding.primary_color|default:"#16a34a" }};
         --color-secondary: {{ branding.secondary_color|default:"#d4af37" }};
-        --color-accent: {{ branding.accent_color|default:"#0f9d58" }};
+        --color-accent: {{ branding.accent_color|default:"#4ade80" }};
         --color-background: {{ branding.background_color|default:"#ffffff" }};
         --color-text: {{ branding.text_color|default:"#1a1a1a" }};
     }
@@ -22,24 +22,242 @@
         color: var(--color-text);
     }
 
-    /* Hero overlay overrides: drop the green tint, let the video read clearly.
-       A soft neutral scrim sits only behind the text side so the copy stays
-       legible without washing the whole clip in color. */
+    /* ---------- Hero overlay (flips automatically for RTL) ---------- */
     .hero-sky {
         background: linear-gradient(180deg, rgba(0,0,0,.10) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,.45) 100%);
     }
     .hero-overlay {
         background: linear-gradient(100deg, rgba(6,10,9,.68) 0%, rgba(6,10,9,.34) 40%, rgba(6,10,9,.05) 62%, rgba(6,10,9,.30) 100%);
     }
-    .hero-title, .hero-tagline, .hero-description {
-        text-shadow: 0 2px 18px rgba(0,0,0,.35);
+    html[dir="rtl"] .hero-overlay {
+        background: linear-gradient(260deg, rgba(6,10,9,.68) 0%, rgba(6,10,9,.34) 40%, rgba(6,10,9,.05) 62%, rgba(6,10,9,.30) 100%);
+    }
+    .hero-title, .hero-tagline, .hero-description { text-shadow: 0 2px 18px rgba(0,0,0,.35); }
+    .hero-video { max-width: none; }
+
+    /* ======================================================================
+       SCROLL FX  (entrance animations + scroll-linked lines)
+       ====================================================================== */
+    .fx-js .fx { opacity: 0; }
+    .fx-js .fx.is-in {
+        animation: fx-up .85s cubic-bezier(.22,1,.36,1) both;
+        animation-delay: calc(var(--i, 0) * 90ms);
+    }
+    @keyframes fx-up {
+        from { opacity: 0; transform: translateY(34px) scale(.97); }
+        to   { opacity: 1; transform: none; }
     }
 
-    /* Gallery + testimonials — minimal layout so they work even before
-       your designer styles them properly in hero-modern.css */
+    /* Thin page-scroll progress line at the very top */
+    .scroll-progress {
+        position: fixed;
+        top: 0; inset-inline: 0;
+        height: 3px;
+        z-index: 80;
+        pointer-events: none;
+    }
+    .scroll-progress::before {
+        content: "";
+        position: absolute; inset: 0;
+        background: linear-gradient(90deg, var(--color-primary), var(--color-accent), var(--color-secondary));
+        transform: scaleX(var(--sp, 0));
+        transform-origin: left;
+        box-shadow: 0 0 10px rgba(22,163,74,.7);
+    }
+    html[dir="rtl"] .scroll-progress::before { transform-origin: right; }
+
+    /* Heading rule that draws itself as you scroll */
+    .fx-rule {
+        display: block;
+        width: 120px; max-width: 100%;
+        height: 4px;
+        margin-top: .8rem;
+        border-radius: 4px;
+        background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+        transform: scaleX(var(--line, 0));
+        transform-origin: left;
+    }
+    html[dir="rtl"] .fx-rule { transform-origin: right; }
+
+    /* ======================================================================
+       PRODUCTS — image is OPTIONAL. No image => clean text-only card.
+       ====================================================================== */
+    .products-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+        gap: 1.25rem;
+        align-items: stretch;
+    }
+    .product-card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        isolation: isolate;
+        border-radius: 16px;
+        background: rgba(127,127,127,.07);
+        border: 1px solid rgba(127,127,127,.2);
+        transition: translate .35s ease, box-shadow .35s ease, border-color .35s ease;
+    }
+    .product-card:hover {
+        translate: 0 -6px;
+        border-color: var(--color-primary);
+        box-shadow: 0 14px 34px rgba(22,163,74,.22);
+    }
+    /* top line that draws while scrolling */
+    .product-card::before {
+        content: "";
+        position: absolute;
+        top: 0; inset-inline: 0;
+        height: 4px;
+        z-index: 2;
+        background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+        transform: scaleX(var(--line, 0));
+        transform-origin: left;
+    }
+    html[dir="rtl"] .product-card::before { transform-origin: right; }
+
+    .product-media { aspect-ratio: 4 / 3; overflow: hidden; background: #000; }
+    .product-media img {
+        display: block;
+        width: 100%; height: 100%;
+        object-fit: cover;
+        transition: transform .7s cubic-bezier(.22,1,.36,1);
+    }
+    .product-card:hover .product-media img { transform: scale(1.08); }
+
+    .product-body {
+        display: flex;
+        align-items: center;
+        gap: .9rem;
+        padding: 1.05rem 1.2rem 1.2rem;
+    }
+    .product-num {
+        flex: none;
+        font-size: 1.05rem;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+        color: var(--color-primary);
+        padding: .35rem .6rem;
+        border-radius: 999px;
+        background: rgba(22,163,74,.12);
+    }
+    .product-label { font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+
+    /* text-only variant (no image) */
+    .product-card.no-image {
+        justify-content: center;
+        min-height: 130px;
+        background: linear-gradient(135deg, rgba(22,163,74,.12), rgba(127,127,127,.05));
+    }
+    .product-card.no-image::after {
+        content: "";
+        position: absolute;
+        z-index: -1;
+        width: 140px; height: 140px;
+        inset-inline-end: -40px; bottom: -50px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(74,222,128,.35), transparent 70%);
+        transition: transform .6s ease;
+    }
+    .product-card.no-image:hover::after { transform: scale(1.5); }
+    .product-card.no-image .product-body { padding: 1.5rem 1.3rem; }
+    .product-card.no-image .product-label { font-size: 1.1rem; }
+
+    /* ======================================================================
+       ROUTES — line fills while scrolling, stops light up one by one
+       ====================================================================== */
+    .route-line {
+        --flag: 60px;
+        position: relative;
+        display: flex;
+        align-items: flex-start;
+        gap: .75rem;
+        padding: 1.5rem 0 .5rem;
+    }
+    .route-track {
+        position: absolute;
+        inset-inline: calc(100% / var(--n, 2) / 2);
+        top: calc(1.5rem + var(--flag) / 2 - 2px);
+        height: 4px;
+        border-radius: 4px;
+        background: rgba(127,127,127,.28);
+        overflow: hidden;
+    }
+    .route-fill {
+        position: absolute; inset: 0;
+        background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+        box-shadow: 0 0 14px rgba(22,163,74,.7);
+        transform: scaleX(var(--p, 0));
+        transform-origin: left;
+        overflow: hidden;
+    }
+    html[dir="rtl"] .route-fill { transform-origin: right; }
+    .route-fill::after {
+        content: "";
+        position: absolute;
+        top: 0; bottom: 0;
+        width: 30%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,.7), transparent);
+        animation: route-flow 2.2s linear infinite;
+    }
+    @keyframes route-flow { from { left: -30%; } to { left: 100%; } }
+    html[dir="rtl"] .route-fill::after { left: auto; animation-name: route-flow-rtl; }
+    @keyframes route-flow-rtl { from { right: -30%; } to { right: 100%; } }
+
+    .route-stop {
+        position: relative;
+        z-index: 1;
+        flex: 1 1 0;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: .65rem;
+        text-align: center;
+    }
+    .route-flag {
+        width: var(--flag); height: var(--flag);
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        border-radius: 50%;
+        font-size: 1.7rem;
+        background: var(--color-background, #fff);
+        border: 3px solid rgba(127,127,127,.4);
+        transition: border-color .45s ease, box-shadow .45s ease, transform .45s ease;
+    }
+    .route-flag img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .route-name { font-weight: 600; font-size: .95rem; opacity: .55; transition: opacity .45s ease; }
+    .route-stop.is-lit .route-flag {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 6px rgba(22,163,74,.16), 0 0 24px rgba(22,163,74,.55);
+        transform: scale(1.1);
+    }
+    .route-stop.is-lit .route-name { opacity: 1; }
+
+    .route-notes { list-style: none; margin: 1.5rem 0 0; padding: 0; display: grid; gap: .6rem; }
+    .route-notes li { padding-inline-start: .25rem; }
+
+    /* Mobile: route becomes a vertical timeline */
+    @media (max-width: 640px) {
+        .route-line { flex-direction: column; align-items: stretch; gap: 1.5rem; }
+        .route-track {
+            inset-inline: auto;
+            inset-inline-start: calc(var(--flag) / 2 - 2px);
+            top: calc(1.5rem + var(--flag) / 2);
+            bottom: calc(.5rem + var(--flag) / 2);
+            width: 4px; height: auto;
+        }
+        html[dir] .route-fill { transform: scaleY(var(--p, 0)); transform-origin: top; }
+        .route-fill::after { display: none; }
+        .route-stop { flex: none; flex-direction: row; justify-content: flex-start; text-align: start; gap: 1rem; }
+    }
+
+    /* ---------- Gallery ---------- */
     .media-gallery .gallery-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
         gap: 1.25rem;
     }
     .media-gallery .gallery-item {
@@ -52,44 +270,35 @@
     .media-gallery .gallery-item img,
     .media-gallery .gallery-item video,
     .media-gallery .gallery-item iframe {
-        width: 100%;
-        height: 100%;
+        width: 100%; height: 100%;
         object-fit: cover;
         border: 0;
         display: block;
     }
     .media-gallery .gallery-caption {
         position: absolute;
-        inset-inline: 0;
-        bottom: 0;
+        inset-inline: 0; bottom: 0;
         padding: .5rem .75rem;
         background: linear-gradient(0deg, rgba(0,0,0,.65), rgba(0,0,0,0));
         color: #fff;
         font-size: .85rem;
     }
+
+    /* ---------- Testimonials ---------- */
     .testimonials .testimonial-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
         gap: 1.5rem;
     }
     .testimonials .testimonial-card {
         background: #fff;
+        color: #1a1a1a;
         border-radius: 12px;
         padding: 1.5rem;
         box-shadow: 0 4px 18px rgba(0,0,0,.06);
     }
-    .testimonials .testimonial-header {
-        display: flex;
-        align-items: center;
-        gap: .75rem;
-        margin-bottom: .75rem;
-    }
-    .testimonials .testimonial-header img {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
+    .testimonials .testimonial-header { display: flex; align-items: center; gap: .75rem; margin-bottom: .75rem; }
+    .testimonials .testimonial-header img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
     .testimonials .testimonial-name { font-weight: 600; }
     .testimonials .testimonial-role { font-size: .8rem; opacity: .7; }
     .testimonials .stars {
@@ -109,16 +318,25 @@
         white-space: nowrap;
         color: var(--color-secondary);
     }
+
+    @media (prefers-reduced-motion: reduce) {
+        .fx-js .fx { opacity: 1; }
+        .fx-js .fx.is-in { animation: none; }
+        .route-fill::after { animation: none; }
+        .product-card, .product-media img, .route-flag { transition: none; }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 
+<div class="scroll-progress" id="scrollBar" aria-hidden="true"></div>
+
 <!-- HERO : admin-controlled video (falls back to the default truck clip) -->
 <section class="hero hero-night">
     {% if page.hero_video_file %}
         <video class="hero-video" src="{{ page.hero_video_file.url }}"
-               {% if page.hero_image %}poster="{% image page.hero_image width-1600 as hposter %}{{ hposter.url }}"{% endif %}
+               {% if page.hero_image %}{% image page.hero_image width-1600 as hposter %}poster="{{ hposter.url }}"{% endif %}
                autoplay muted loop playsinline preload="auto" aria-hidden="true"></video>
     {% elif page.hero_video_embed_url %}
         <iframe class="hero-video hero-video-embed" src="{{ page.hero_video_embed_url }}"
@@ -146,14 +364,18 @@
                 <span class="accent">{{ page|bi:"hero_title_line2" }}</span>
             </h1>
             <p class="hero-tagline">{{ page|bi:"hero_tagline" }}</p>
-            {% if page|bi:"hero_description" %}
-                <p class="hero-description">{{ page|bi:"hero_description" }}</p>
-            {% endif %}
+            {% with hero_desc=page|bi:"hero_description" %}
+                {% if hero_desc %}<p class="hero-description">{{ hero_desc }}</p>{% endif %}
+            {% endwith %}
+            {% with btn1=page|bi:"hero_button1_text" %}
+            {% if btn1 %}
             <div class="hero-buttons">
                 <a href="{{ page.hero_button1_link|default:'#services' }}" class="btn btn-primary btn-glow">
-                    {{ page|bi:"hero_button1_text" }} <span class="arrow">&#8594;</span>
+                    {{ btn1 }} <span class="arrow">&#8594;</span>
                 </a>
             </div>
+            {% endif %}
+            {% endwith %}
         </div>
     </div>
 </section>
@@ -169,52 +391,58 @@
             <a href="{{ page.about_button_link }}" class="btn btn-primary">{{ page|bi:"about_button_text" }}</a>
             {% endif %}
 
-            {% if page.stats.all %}
+            {% with stats=page.stats.all %}
+            {% if stats %}
             <div class="stats-row">
-                {% for stat in page.stats.all %}
+                {% for stat in stats %}
                     <div class="stat">
-                        <span class="stat-number" data-count="{{ stat.number }}">0</span>
+                        <span class="stat-number" data-count="{{ stat.number|unlocalize }}">0</span>
                         <span class="stat-label">{{ stat|bi:"label" }}</span>
                     </div>
                 {% endfor %}
             </div>
             {% endif %}
+            {% endwith %}
         </div>
 
         <div class="about-media" data-reveal>
             {% if page.about_image %}
                 {% image page.about_image width-800 as about_img %}
-                <img src="{{ about_img.url }}" alt="{{ page|bi:'about_title' }}" />
+                <img src="{{ about_img.url }}" alt="{{ page|bi:'about_title' }}" loading="lazy" />
             {% endif %}
-            {% if page|bi:"about_overlay_text" %}
-                <div class="about-overlay-text">{{ page|bi:"about_overlay_text" }}</div>
-            {% endif %}
+            {% with overlay=page|bi:"about_overlay_text" %}
+                {% if overlay %}<div class="about-overlay-text">{{ overlay }}</div>{% endif %}
+            {% endwith %}
         </div>
     </div>
 </section>
 
-<!-- SERVICES : "What we do" — redesigned as a modern split lane grid -->
+<!-- SERVICES -->
+{% with services=page.services.all %}
+{% if services %}
 <section class="services services-modern" id="services">
     <div class="container">
         <div class="section-heading services-heading" data-reveal>
             <div>
                 <p class="eyebrow">{{ page|bi:"services_label" }}</p>
-                <h2>{% if IS_RTL %}{{ page|bi:"services_title" }}{% else %}What we <span class="accent">move for you</span>{% endif %}</h2>
+                <h2>{{ page|bi:"services_title" }}</h2>
             </div>
-            {% if page|bi:"services_intro" %}<p class="section-intro">{{ page|bi:"services_intro" }}</p>{% endif %}
+            {% with intro=page|bi:"services_intro" %}
+                {% if intro %}<p class="section-intro">{{ intro }}</p>{% endif %}
+            {% endwith %}
         </div>
 
         <div class="services-lanes" data-reveal-group>
-            {% for service in page.services.all %}
+            {% for service in services %}
                 <div class="service-lane" data-reveal style="--i:{{ forloop.counter0 }}">
                     <div class="service-lane-media">
                         {% if service.image %}
                             {% image service.image width-500 as simg %}
-                            <img src="{{ simg.url }}" alt="{{ service|bi:'title' }}" />
+                            <img src="{{ simg.url }}" alt="{{ service|bi:'title' }}" loading="lazy" />
                         {% else %}
                             <div class="service-lane-icon">
                                 {% if service.icon %}
-                                    {% image service.icon width-40 as sicon %}
+                                    {% image service.icon width-80 as sicon %}
                                     <img src="{{ sicon.url }}" alt="" />
                                 {% else %}
                                     <span class="icon-fallback">&#9670;</span>
@@ -225,36 +453,46 @@
                     <div class="service-lane-body">
                         <h3>{{ service|bi:"title" }}</h3>
                         <p>{{ service|bi:"description" }}</p>
-                        <a href="{% if service.link_page %}{{ service.link_page.url }}{% else %}#{% endif %}" class="link-more">
+                        {% if service.link_page %}
+                        <a href="{{ service.link_page.url }}" class="link-more">
                             {% if IS_RTL %}بیشتر بدانید{% else %}Learn more{% endif %} <span class="arrow">&#8594;</span>
                         </a>
+                        {% endif %}
                     </div>
                 </div>
             {% endfor %}
         </div>
     </div>
 </section>
+{% endif %}
+{% endwith %}
 
-<!-- ROUTES -->
+<!-- ROUTES : the line fills as you scroll, stops light up one by one -->
+{% with stops=page.route_stops.all %}
 <section class="routes">
     <div class="container routes-grid">
         <div class="routes-copy" data-reveal>
             <p class="eyebrow">{{ page|bi:"routes_label" }}</p>
             <h2>{{ page|bi:"routes_title" }}</h2>
-            {% if page|bi:"routes_intro" %}<p>{{ page|bi:"routes_intro" }}</p>{% endif %}
+            <span class="fx-rule" data-scroll-line aria-hidden="true"></span>
+            {% with intro=page|bi:"routes_intro" %}
+                {% if intro %}<p>{{ intro }}</p>{% endif %}
+            {% endwith %}
             {% if page.routes_button_link %}
             <a href="{{ page.routes_button_link }}" class="btn btn-primary">{{ page|bi:"routes_button_text" }}</a>
             {% endif %}
         </div>
 
-        <div class="routes-map" data-reveal>
-            <div class="route-line">
-                {% for stop in page.route_stops.all %}
-                    <div class="route-stop">
-                        <div class="route-flag flag-wave">
+        <div class="routes-map">
+            {% if stops %}
+            <div class="route-line" data-route style="--n:{{ stops|length }};">
+                <div class="route-track" aria-hidden="true"><span class="route-fill"></span></div>
+                {% for stop in stops %}
+                    <div class="route-stop fx" style="--i:{{ forloop.counter0 }}">
+                        <div class="route-flag">
                             {% if stop.flag_image %}
-                                {% image stop.flag_image width-60 as flag %}
-                                <img src="{{ flag.url }}" alt="{{ stop|bi:'country_name' }}" />
+                                {% image stop.flag_image width-120 as flag %}
+                                <img src="{{ flag.url }}" alt="{{ stop|bi:'country_name' }}" loading="lazy" />
                             {% else %}
                                 {% with cname=stop|bi:"country_name" %}
                                     {% if "افغانستان" in cname or "Afghanistan" in cname %}
@@ -275,23 +513,29 @@
                                 {% endwith %}
                             {% endif %}
                         </div>
-                        <span>{{ stop|bi:"country_name" }}</span>
+                        <span class="route-name">{{ stop|bi:"country_name" }}</span>
                     </div>
-                    {% if not forloop.last %}<div class="route-arrow">&#8594;</div>{% endif %}
                 {% endfor %}
             </div>
-            {% if page.route_notes.all %}
+            {% endif %}
+
+            {% with notes=page.route_notes.all %}
+            {% if notes %}
             <ul class="route-notes">
-                {% for note in page.route_notes.all %}
-                    <li>&#128205; {{ note|bi:"text" }}</li>
+                {% for note in notes %}
+                    <li class="fx" style="--i:{{ forloop.counter0 }}">&#128205; {{ note|bi:"text" }}</li>
                 {% endfor %}
             </ul>
             {% endif %}
+            {% endwith %}
         </div>
     </div>
 </section>
+{% endwith %}
 
 <!-- WHY CHOOSE US -->
+{% with items=page.why_choose_items.all %}
+{% if items %}
 <section class="why-choose">
     <div class="container">
         <div class="section-heading" data-reveal>
@@ -299,11 +543,11 @@
             <h2>{{ page|bi:"why_title" }}</h2>
         </div>
         <div class="why-grid" data-reveal-group>
-            {% for item in page.why_choose_items.all %}
+            {% for item in items %}
                 <div class="why-card" data-reveal style="--i:{{ forloop.counter0 }}">
                     <div class="icon-circle">
                         {% if item.icon %}
-                            {% image item.icon width-40 as wicon %}
+                            {% image item.icon width-80 as wicon %}
                             <img src="{{ wicon.url }}" alt="" />
                         {% else %}
                             <span class="icon-fallback">&#9670;</span>
@@ -316,35 +560,52 @@
         </div>
     </div>
 </section>
+{% endif %}
+{% endwith %}
 
-<!-- PRODUCTS -->
-<section class="products">
+<!-- PRODUCTS : image is optional; cards without an image show text only -->
+{% with products=page.product_categories.all %}
+{% if products %}
+<section class="products" id="products">
     <div class="container">
         <div class="section-heading" data-reveal>
             <div>
                 <p class="eyebrow">{{ page|bi:"products_label" }}</p>
                 <h2>{{ page|bi:"products_title" }}</h2>
+                <span class="fx-rule" data-scroll-line aria-hidden="true"></span>
             </div>
             {% if page.products_button_link %}
             <a href="{{ page.products_button_link }}" class="btn btn-outline btn-sm">{{ page|bi:"products_button_text" }} <span class="arrow">&#8594;</span></a>
             {% endif %}
         </div>
-        <div class="products-grid" data-reveal-group>
-            {% for product in page.product_categories.all %}
-                <div class="product-card" data-reveal style="--i:{{ forloop.counter0 }}">
+
+        <div class="products-grid">
+            {% for product in products %}
+                <div class="product-card fx{% if not product.image %} no-image{% endif %}"
+                     data-scroll-line style="--i:{{ forloop.counter0 }}">
                     {% if product.image %}
-                        {% image product.image width-400 as pimg %}
-                        <img src="{{ pimg.url }}" alt="{{ product|bi:'title' }}" />
+                        {% image product.image width-600 as pimg %}
+                        <div class="product-media">
+                            <img src="{{ pimg.url }}" alt="{{ product|bi:'title' }}" loading="lazy" />
+                        </div>
                     {% endif %}
-                    <span class="product-label">{{ product|bi:"title" }}</span>
+                    <div class="product-body">
+                        {% with n=forloop.counter|stringformat:"02d" %}
+                        <span class="product-num" dir="ltr">{% if IS_RTL %}{{ n|fa_digits }}{% else %}{{ n }}{% endif %}</span>
+                        {% endwith %}
+                        <span class="product-label">{{ product|bi:"title" }}</span>
+                    </div>
                 </div>
             {% endfor %}
         </div>
     </div>
 </section>
+{% endif %}
+{% endwith %}
 
-<!-- MEDIA GALLERY (photos + videos, fully admin-controlled) -->
-{% if page.media_gallery.all %}
+<!-- MEDIA GALLERY -->
+{% with gallery=page.media_gallery.all %}
+{% if gallery %}
 <section class="media-gallery" id="gallery">
     <div class="container">
         <div class="section-heading" data-reveal>
@@ -352,31 +613,33 @@
             <h2>{{ page|bi:"gallery_title" }}</h2>
         </div>
         <div class="gallery-grid" data-reveal-group>
-            {% for item in page.media_gallery.all %}
+            {% for item in gallery %}
                 <div class="gallery-item" data-reveal style="--i:{{ forloop.counter0 }}">
                     {% if item.media_type == "image" and item.image %}
                         {% image item.image width-600 as gimg %}
                         <img src="{{ gimg.url }}" alt="{{ item|bi:'caption' }}" loading="lazy" />
                     {% elif item.media_type == "video_file" and item.video_file %}
                         <video src="{{ item.video_file.url }}"
-                               {% if item.image %}poster="{% image item.image width-600 as gposter %}{{ gposter.url }}"{% endif %}
+                               {% if item.image %}{% image item.image width-600 as gposter %}poster="{{ gposter.url }}"{% endif %}
                                controls playsinline preload="none"></video>
                     {% elif item.media_type == "video_embed" and item.video_embed_url %}
-                        <iframe src="{{ item.video_embed_url }}" title="{{ item|bi:'caption' }}"
+                        <iframe src="{{ item.video_embed_url }}" title="{{ item|bi:'caption'|default:'Video' }}"
                                 allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
                     {% endif %}
-                    {% if item|bi:"caption" %}
-                        <div class="gallery-caption">{{ item|bi:"caption" }}</div>
-                    {% endif %}
+                    {% with cap=item|bi:"caption" %}
+                        {% if cap %}<div class="gallery-caption">{{ cap }}</div>{% endif %}
+                    {% endwith %}
                 </div>
             {% endfor %}
         </div>
     </div>
 </section>
 {% endif %}
+{% endwith %}
 
-<!-- TESTIMONIALS / CUSTOMER MESSAGES (fully admin-controlled) -->
-{% if page.testimonials.all %}
+<!-- TESTIMONIALS -->
+{% with testimonials=page.testimonials.all %}
+{% if testimonials %}
 <section class="testimonials" id="testimonials">
     <div class="container">
         <div class="section-heading" data-reveal>
@@ -384,21 +647,21 @@
             <h2>{{ page|bi:"testimonials_title" }}</h2>
         </div>
         <div class="testimonial-grid" data-reveal-group>
-            {% for t in page.testimonials.all %}
+            {% for t in testimonials %}
                 <div class="testimonial-card" data-reveal style="--i:{{ forloop.counter0 }}">
                     <div class="testimonial-header">
                         {% if t.photo %}
                             {% image t.photo fill-96x96 as tphoto %}
-                            <img src="{{ tphoto.url }}" alt="{{ t|bi:'client_name' }}" />
+                            <img src="{{ tphoto.url }}" alt="{{ t|bi:'client_name' }}" loading="lazy" />
                         {% endif %}
                         <div>
                             <div class="testimonial-name">{{ t|bi:"client_name" }}</div>
-                            {% if t|bi:"client_role" %}
-                                <div class="testimonial-role">{{ t|bi:"client_role" }}</div>
-                            {% endif %}
+                            {% with role=t|bi:"client_role" %}
+                                {% if role %}<div class="testimonial-role">{{ role }}</div>{% endif %}
+                            {% endwith %}
                         </div>
                     </div>
-                    <div class="stars" dir="ltr" style="--rating: {{ t.rating }};" aria-hidden="true">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+                    <div class="stars" dir="ltr" style="--rating: {{ t.rating|unlocalize }};" aria-hidden="true">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
                     <p class="testimonial-message">{{ t|bi:"message" }}</p>
                 </div>
             {% endfor %}
@@ -406,12 +669,13 @@
     </div>
 </section>
 {% endif %}
+{% endwith %}
 
 <!-- CTA BANNER -->
 <section class="cta-banner">
     {% if page.cta_background %}
         {% image page.cta_background width-1600 as cta_bg %}
-        <img src="{{ cta_bg.url }}" alt="" class="cta-bg" />
+        <img src="{{ cta_bg.url }}" alt="" class="cta-bg" loading="lazy" />
     {% endif %}
     <div class="cta-overlay"></div>
     <div class="container cta-inner" data-reveal>
@@ -433,4 +697,64 @@
 
 {% block extra_js %}
 <script src="{% static 'home/js/hero-modern.js' %}" defer></script>
+<script>
+(function () {
+    var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /* 1) Entrance animation for .fx elements */
+    var fx = [].slice.call(document.querySelectorAll('.fx'));
+    if ('IntersectionObserver' in window && !reduce) {
+        var io = new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) {
+                if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
+            });
+        }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
+        fx.forEach(function (el) { io.observe(el); });
+    } else {
+        fx.forEach(function (el) { el.classList.add('is-in'); });
+    }
+
+    /* 2) Scroll-linked lines: page progress, heading rules, card lines, route */
+    var bar    = document.getElementById('scrollBar');
+    var lines  = [].slice.call(document.querySelectorAll('[data-scroll-line]'));
+    var route  = document.querySelector('[data-route]');
+    var stops  = route ? [].slice.call(route.querySelectorAll('.route-stop')) : [];
+    var ticking = false;
+
+    function clamp(v) { return Math.max(0, Math.min(1, v)); }
+
+    function update() {
+        ticking = false;
+        var vh = window.innerHeight;
+
+        if (bar) {
+            var max = document.documentElement.scrollHeight - vh;
+            bar.style.setProperty('--sp', max > 0 ? clamp(window.scrollY / max) : 0);
+        }
+
+        lines.forEach(function (el) {
+            var top = el.getBoundingClientRect().top;
+            el.style.setProperty('--line', reduce ? 1 : clamp((vh * 0.92 - top) / (vh * 0.35)));
+        });
+
+        if (route) {
+            var r = route.getBoundingClientRect();
+            var p = reduce ? 1 : clamp((vh * 0.75 - r.top) / (r.height * 0.9 + 80));
+            route.style.setProperty('--p', p);
+            var n = stops.length;
+            stops.forEach(function (s, i) {
+                var t = n > 1 ? i / (n - 1) : 0;
+                s.classList.toggle('is-lit', p > 0 && p + 0.04 >= t);
+            });
+        }
+    }
+
+    function onScroll() {
+        if (!ticking) { ticking = true; requestAnimationFrame(update); }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    update();
+})();
+</script>
 {% endblock %}
