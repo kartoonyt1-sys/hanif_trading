@@ -7,6 +7,10 @@ from django.utils.translation import activate, check_for_language
 
 from .forms import ContactForm
 from .models import ContactPage, ContactSubmission
+import logging
+
+from django.conf import settings
+from django.core.mail import EmailMessage
 
 
 def set_language(request):
@@ -31,16 +35,22 @@ def set_language(request):
         )
     return response
 
+"""
+Contact form view — put these imports at the top of home/views.py (keep your
+other imports) and replace the old submit_contact_form with the one below.
+"""
+
+
+logger = logging.getLogger(__name__)
+
 
 def submit_contact_form(request, page_id=None):
-    """Handles POST from the Contact page form (and the header 'Get a Quote'
-    button, which links to the contact page). On success, stores a
-    ContactSubmission row (visible to admins in Wagtail), emails the team,
-    stashes a copy of the submission in the session so the contact page can
-    show the visitor what they just sent, and redirects back to the contact
-    page with a success flag.
+    """Handles POST from the Contact page form.
+
+    On success: saves a ContactSubmission (visible in Wagtail admin), emails
+    the team, stores a copy in the session so the contact page can show the
+    visitor what they sent, then redirects back with ?sent=1.
     """
-    contact_page = None
     if page_id:
         contact_page = get_object_or_404(ContactPage, pk=page_id)
     else:
@@ -49,57 +59,57 @@ def submit_contact_form(request, page_id=None):
     if request.method == "POST":
         form = ContactForm(request.POST)
         if form.is_valid():
+            data = form.cleaned_data
+
             ContactSubmission.objects.create(
-                name=form.cleaned_data["name"],
-                email=form.cleaned_data["email"],
-                phone=form.cleaned_data.get("phone", ""),
-                subject=form.cleaned_data.get("subject", ""),
-                message=form.cleaned_data["message"],
+                name=data["name"],
+                email=data["email"],
+                phone=data.get("phone", ""),
+                subject=data.get("subject", ""),
+                message=data["message"],
             )
 
-            # Stash a copy of what was submitted so the contact page can
-            # show it back to the visitor as a confirmation, right after
-            # the redirect below. Read once and discarded (see the GET
-            # branch), so it never lingers in the session.
+            # Shown once on the contact page after the redirect.
             request.session["last_submission"] = {
-                "name": form.cleaned_data["name"],
-                "email": form.cleaned_data["email"],
-                "subject": form.cleaned_data.get("subject", ""),
-                "message": form.cleaned_data["message"],
+                "name": data["name"],
+                "email": data["email"],
+                "subject": data.get("subject", ""),
+                "message": data["message"],
             }
 
+            # --- Email the team. Errors are logged (never hidden) and never
+            # break the visitor's experience: the submission is already saved.
             try:
-                send_mail(
-                    subject=f"New website enquiry: {form.cleaned_data.get('subject') or 'General'}",
-                    message=(
-                        f"Name: {form.cleaned_data['name']}\n"
-                        f"Email: {form.cleaned_data['email']}\n"
-                        f"Phone: {form.cleaned_data.get('phone', '')}\n\n"
-                        f"{form.cleaned_data['message']}"
+                email = EmailMessage(
+                    subject=f"New website enquiry: {data.get('subject') or 'General'}",
+                    body=(
+                        f"Name: {data['name']}\n"
+                        f"Email: {data['email']}\n"
+                        f"Phone: {data.get('phone', '')}\n\n"
+                        f"{data['message']}"
                     ),
-                    from_email=None,
-                    recipient_list=[settings.CONTACT_FORM_RECIPIENT],
-                    fail_silently=True,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[settings.CONTACT_FORM_RECIPIENT],
+                    reply_to=[data["email"]],   # "Reply" goes straight to the customer
                 )
+                email.send(fail_silently=False)
             except Exception:
-                pass
+                logger.exception("Contact form email failed")
 
-            url = contact_page.url if contact_page else "/"
+            # page.url can be None if the page is outside the site tree,
+            # so always fall back to a real path.
+            url = (contact_page.url if contact_page else None) or "/contact/"
             return redirect(f"{url}?sent=1")
     else:
         form = ContactForm()
 
+    context = {"form": form}
     if contact_page:
-        # Render directly (instead of contact_page.serve(request)) so the
-        # form and, when present, the just-submitted confirmation data are
-        # actually available to home/contact_page.html.
-        return render(request, "home/contact_page.html", {
+        context.update({
             "page": contact_page,
             "self": contact_page,
-            "form": form,
-            # Popped (not just read) so it only shows once, right after
-            # the redirect from a successful submission.
+            # pop => shown only once, right after a successful submission
             "last_submission": request.session.pop("last_submission", None),
         })
 
-    return render(request, "home/contact_page.html", {"form": form})
+    return render(request, "home/contact_page.html", context)
