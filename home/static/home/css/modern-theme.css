@@ -204,3 +204,51 @@ body{ background: var(--color-light); }
 .lang-switch span{ color: rgba(15,61,36,.35); }
 
 .hamburger span{ background: var(--color-navbar-text); }
+/* ===== MOBILE NAV FIX - 100% Working ===== */
+@media (max-width: 768px) {
+  .main-nav {
+    display: none !important;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #0a0a0a;
+    flex-direction: column;
+    padding: 20px;
+    border-radius: 0 0 16px 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    z-index: 100;
+  }
+  .main-nav.open,
+  .main-nav.active {
+    display: flex !important;
+  }
+  .main-nav a {
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    font-size: 16px;
+  }
+  .hamburger.active span:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+  }
+  .hamburger.active span:nth-child(2) {
+    opacity: 0;
+  }
+  .hamburger.active span:nth-child(3) {
+    transform: rotate(-45deg) translate(7px, -6px);
+  }
+}
+
+/* Fix Popular Trade Categories on mobile */
+@media (max-width: 640px) {
+  .trade-categories, 
+  [class*="trade"] {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+  .services-grid,
+  [class*="services"] {
+    grid-template-columns: 1fr !important;
+  }
+}
