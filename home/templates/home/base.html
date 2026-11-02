@@ -8,7 +8,7 @@
     <meta name="description" content="{% block meta_description %}{{ branding|bi:"footer_about" }}{% endblock %}" />
     <meta property="og:title" content="{% block og_title %}{{ page.title|default:'' }} {{ branding|bi:'site_name' }}{% endblock %}" />
     <meta property="og:type" content="website" />
-    <link rel="icon" href="{% static 'home/images/logo.jpg' %}" />
+    <link rel="icon" href="{% static 'home/images/logo.png' %}" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -327,7 +327,7 @@
                     {% image branding.logo width-200 as flogo %}
                     <img src="{{ flogo.url }}" alt="{{ branding|bi:'site_name' }}" class="brand-logo" />
                 {% else %}
-                    <img src="{% static 'home/images/logo.jpg' %}" alt="{{ branding|bi:'site_name'|default:'Hanif Aimaq' }}" class="brand-logo" />
+                    <img src="{% static 'home/images/logo.png' %}" alt="{{ branding|bi:'site_name'|default:'Hanif Aimaq' }}" class="brand-logo" />
                 {% endif %}
                 <span class="brand-text">
                     <strong>{{ branding|bi:"site_name" }} <span class="accent">{{ branding|bi:"site_tagline" }}</span></strong>
