@@ -489,17 +489,21 @@
                             {% else %}
                                 {% with cname=stop|bi:"country_name" %}
                                     {% if "افغانستان" in cname or "Afghanistan" in cname %}
-                                        <img src="{% static 'home/images/flags/af.png' %}" alt="{{ cname }}" loading="lazy" />
+                                        <img src="{% static 'home/images/af.png' %}" alt="{{ cname }}" loading="lazy" />
                                     {% elif "قرغز" in cname or "Kyrgyz" in cname %}
-                                        <img src="{% static 'home/images/flags/kg.png' %}" alt="{{ cname }}" loading="lazy" />
+                                        <img src="{% static 'home/images/kg.png' %}" alt="{{ cname }}" loading="lazy" />
                                     {% elif "تاجک" in cname or "Tajik" in cname %}
-                                        <img src="{% static 'home/images/flags/tj.png' %}" alt="{{ cname }}" loading="lazy" />
+                                        <img src="{% static 'home/images/tj.png' %}" alt="{{ cname }}" loading="lazy" />
                                     {% elif "ازبک" in cname or "Uzbek" in cname %}
-                                        <img src="{% static 'home/images/flags/uz.png' %}" alt="{{ cname }}" loading="lazy" />
+                                        <img src="{% static 'home/images/uz.png' %}" alt="{{ cname }}" loading="lazy" />
                                     {% elif "چین" in cname or "جین" in cname or "China" in cname %}
-                                        <img src="{% static 'home/images/flags/cn.png' %}" alt="{{ cname }}" loading="lazy" />
+                                        <img src="{% static 'home/images/cn.png' %}" alt="{{ cname }}" loading="lazy" />
                                     {% elif "ایران" in cname or "Iran" in cname %}
-                                        <img src="{% static 'home/images/flags/ir.png' %}" alt="{{ cname }}" loading="lazy" />
+                                        <img src="{% static 'home/images/ir.png' %}" alt="{{ cname }}" loading="lazy" />
+                                    {% elif "قزاق" in cname or "قزق" in cname or "Kazakh" in cname %}
+                                        <img src="{% static 'home/images/flags/kz.png' %}" alt="{{ cname }}" loading="lazy" />
+                                    {% elif "روس" in cname or "Russia" in cname %}
+                                        <img src="{% static 'home/images/flags/ru.png' %}" alt="{{ cname }}" loading="lazy" />
                                     {% else %}
                                         <span class="icon-fallback">&#9670;</span>
                                     {% endif %}
