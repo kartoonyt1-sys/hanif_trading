@@ -6,10 +6,6 @@
 <!-- Marks the page as "JS available" before first paint, so reveal-animations never flash -->
 <script>document.documentElement.classList.add('fx-js');</script>
 <style>
-    /* ------------------------------------------------------------------
-       THEME COLORS — pulled from Wagtail admin (Settings -> Theme Colors).
-       Defaults now match the green/black site theme.
-       ------------------------------------------------------------------ */
     :root {
         --color-primary: {{ branding.primary_color|default:"#16a34a" }};
         --color-secondary: {{ branding.secondary_color|default:"#d4af37" }};
@@ -36,7 +32,7 @@
     .hero-video { max-width: none; }
 
     /* ======================================================================
-       SCROLL FX  (entrance animations + scroll-linked lines)
+       SCROLL FX
        ====================================================================== */
     .fx-js .fx { opacity: 0; }
     .fx-js .fx.is-in {
@@ -48,7 +44,6 @@
         to   { opacity: 1; transform: none; }
     }
 
-    /* Thin page-scroll progress line at the very top */
     .scroll-progress {
         position: fixed;
         top: 0; inset-inline: 0;
@@ -66,7 +61,6 @@
     }
     html[dir="rtl"] .scroll-progress::before { transform-origin: right; }
 
-    /* Heading rule that draws itself as you scroll */
     .fx-rule {
         display: block;
         width: 120px; max-width: 100%;
@@ -104,7 +98,6 @@
         border-color: var(--color-primary);
         box-shadow: 0 14px 34px rgba(22,163,74,.22);
     }
-    /* top line that draws while scrolling */
     .product-card::before {
         content: "";
         position: absolute;
@@ -144,7 +137,6 @@
     }
     .product-label { font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
 
-    /* text-only variant (no image) */
     .product-card.no-image {
         justify-content: center;
         min-height: 130px;
@@ -165,7 +157,7 @@
     .product-card.no-image .product-label { font-size: 1.1rem; }
 
     /* ======================================================================
-       ROUTES — line fills while scrolling, stops light up one by one
+       ROUTES
        ====================================================================== */
     .route-line {
         --flag: 60px;
@@ -239,7 +231,6 @@
     .route-notes { list-style: none; margin: 1.5rem 0 0; padding: 0; display: grid; gap: .6rem; }
     .route-notes li { padding-inline-start: .25rem; }
 
-    /* Mobile: route becomes a vertical timeline */
     @media (max-width: 640px) {
         .route-line { flex-direction: column; align-items: stretch; gap: 1.5rem; }
         .route-track {
@@ -332,11 +323,11 @@
 
 <div class="scroll-progress" id="scrollBar" aria-hidden="true"></div>
 
-<!-- HERO : admin-controlled video (falls back to the default truck clip) -->
+<!-- HERO : admin video -> embed -> default static video -->
 <section class="hero hero-night">
     {% if page.hero_video_file %}
         <video class="hero-video" src="{{ page.hero_video_file.url }}"
-               {% if page.hero_image %}{% image page.hero_image width-1600 as hposter %}poster="{{ hposter.url }}"{% endif %}
+               {% if page.hero_image %}{% image page.hero_image width-1600 as hposter %}poster="{{ hposter.url }}"{% else %}poster="{% static 'home/images/hero-truck-poster.jpg' %}"{% endif %}
                autoplay muted loop playsinline preload="auto" aria-hidden="true"></video>
     {% elif page.hero_video_embed_url %}
         <iframe class="hero-video hero-video-embed" src="{{ page.hero_video_embed_url }}"
@@ -380,7 +371,7 @@
     </div>
 </section>
 
-<!-- ABOUT -->
+<!-- ABOUT : admin image -> static fallback -->
 <section class="about" id="about">
     <div class="container about-grid">
         <div class="about-copy" data-reveal>
@@ -409,6 +400,8 @@
             {% if page.about_image %}
                 {% image page.about_image width-800 as about_img %}
                 <img src="{{ about_img.url }}" alt="{{ page|bi:'about_title' }}" loading="lazy" />
+            {% else %}
+                <img src="{% static 'home/images/about.jpg' %}" alt="{{ page|bi:'about_title' }}" loading="lazy" />
             {% endif %}
             {% with overlay=page|bi:"about_overlay_text" %}
                 {% if overlay %}<div class="about-overlay-text">{{ overlay }}</div>{% endif %}
@@ -467,7 +460,7 @@
 {% endif %}
 {% endwith %}
 
-<!-- ROUTES : the line fills as you scroll, stops light up one by one -->
+<!-- ROUTES : flags = admin image -> static flag file -> fallback icon -->
 {% with stops=page.route_stops.all %}
 <section class="routes">
     <div class="container routes-grid">
@@ -496,17 +489,17 @@
                             {% else %}
                                 {% with cname=stop|bi:"country_name" %}
                                     {% if "افغانستان" in cname or "Afghanistan" in cname %}
-                                        <span class="flag-emoji">&#127462;&#127467;</span>
+                                        <img src="{% static 'home/images/flags/af.png' %}" alt="{{ cname }}" loading="lazy" />
                                     {% elif "قرغز" in cname or "Kyrgyz" in cname %}
-                                        <span class="flag-emoji">&#127472;&#127468;</span>
+                                        <img src="{% static 'home/images/flags/kg.png' %}" alt="{{ cname }}" loading="lazy" />
                                     {% elif "تاجک" in cname or "Tajik" in cname %}
-                                        <span class="flag-emoji">&#127481;&#127471;</span>
+                                        <img src="{% static 'home/images/flags/tj.png' %}" alt="{{ cname }}" loading="lazy" />
                                     {% elif "ازبک" in cname or "Uzbek" in cname %}
-                                        <span class="flag-emoji">&#127482;&#127487;</span>
+                                        <img src="{% static 'home/images/flags/uz.png' %}" alt="{{ cname }}" loading="lazy" />
                                     {% elif "چین" in cname or "جین" in cname or "China" in cname %}
-                                        <span class="flag-emoji">&#127464;&#127475;</span>
+                                        <img src="{% static 'home/images/flags/cn.png' %}" alt="{{ cname }}" loading="lazy" />
                                     {% elif "ایران" in cname or "Iran" in cname %}
-                                        <span class="flag-emoji">&#127470;&#127479;</span>
+                                        <img src="{% static 'home/images/flags/ir.png' %}" alt="{{ cname }}" loading="lazy" />
                                     {% else %}
                                         <span class="icon-fallback">&#9670;</span>
                                     {% endif %}
@@ -671,11 +664,13 @@
 {% endif %}
 {% endwith %}
 
-<!-- CTA BANNER -->
+<!-- CTA BANNER : admin image -> static fallback -->
 <section class="cta-banner">
     {% if page.cta_background %}
         {% image page.cta_background width-1600 as cta_bg %}
         <img src="{{ cta_bg.url }}" alt="" class="cta-bg" loading="lazy" />
+    {% else %}
+        <img src="{% static 'home/images/cta-bg.jpg' %}" alt="" class="cta-bg" loading="lazy" />
     {% endif %}
     <div class="cta-overlay"></div>
     <div class="container cta-inner" data-reveal>
