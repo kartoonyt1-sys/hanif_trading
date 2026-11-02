@@ -283,7 +283,7 @@
                 {% image branding.logo width-200 as logo_img %}
                 <img src="{{ logo_img.url }}" alt="{{ branding|bi:'site_name' }}" class="brand-logo" />
             {% else %}
-                <img src="{% static 'home/images/logo.jpg' %}" alt="{{ branding|bi:'site_name'|default:'Hanif Aimaq' }}" class="brand-logo" />
+                <img src="{% static 'home/images/logo.png' %}" alt="{{ branding|bi:'site_name'|default:'Hanif Aimaq' }}" class="brand-logo" />
             {% endif %}
             <span class="brand-text">
                 <strong>{{ branding|bi:"site_name" }} <span class="accent">{{ branding|bi:"site_tagline" }}</span></strong>
