@@ -245,6 +245,14 @@
         .route-stop { flex: none; flex-direction: row; justify-content: flex-start; text-align: start; gap: 1rem; }
     }
 
+    /* ---------- Services photos ---------- */
+    .service-lane-media.has-photo { overflow: hidden; }
+    .service-lane-media.has-photo img {
+        display: block;
+        width: 100%; height: 100%;
+        object-fit: cover;
+    }
+
     /* ---------- Gallery ---------- */
     .media-gallery .gallery-grid {
         display: grid;
@@ -428,19 +436,18 @@
         <div class="services-lanes" data-reveal-group>
             {% for service in services %}
                 <div class="service-lane" data-reveal style="--i:{{ forloop.counter0 }}">
-                    <div class="service-lane-media">
+                    <div class="service-lane-media has-photo">
                         {% if service.image %}
                             {% image service.image width-500 as simg %}
                             <img src="{{ simg.url }}" alt="{{ service|bi:'title' }}" loading="lazy" />
                         {% else %}
-                            <div class="service-lane-icon">
-                                {% if service.icon %}
-                                    {% image service.icon width-80 as sicon %}
-                                    <img src="{{ sicon.url }}" alt="" />
-                                {% else %}
-                                    <span class="icon-fallback">&#9670;</span>
-                                {% endif %}
-                            </div>
+                            {# Static fallback: service-1.jpg, service-2.jpg, ... (by position) #}
+                            {% with sfile=forloop.counter|stringformat:"d" %}
+                            {% with spath="home/images/service-"|add:sfile|add:".jpg" %}
+                            <img src="{% static spath %}" alt="{{ service|bi:'title' }}" loading="lazy"
+                                 onerror="this.closest('.service-lane-media').classList.remove('has-photo');this.remove();" />
+                            {% endwith %}
+                            {% endwith %}
                         {% endif %}
                     </div>
                     <div class="service-lane-body">
@@ -500,10 +507,6 @@
                                         <img src="{% static 'home/images/cn.png' %}" alt="{{ cname }}" loading="lazy" />
                                     {% elif "ایران" in cname or "Iran" in cname %}
                                         <img src="{% static 'home/images/ir.png' %}" alt="{{ cname }}" loading="lazy" />
-                                    {% elif "قزاق" in cname or "قزق" in cname or "Kazakh" in cname %}
-                                        <img src="{% static 'home/images/kz.png' %}" alt="{{ cname }}" loading="lazy" />
-                                    {% elif "روس" in cname or "Russia" in cname %}
-                                        <img src="{% static 'home/images/ru.png' %}" alt="{{ cname }}" loading="lazy" />
                                     {% else %}
                                         <span class="icon-fallback">&#9670;</span>
                                     {% endif %}
