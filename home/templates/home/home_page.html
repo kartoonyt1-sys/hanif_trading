@@ -245,12 +245,12 @@
         .route-stop { flex: none; flex-direction: row; justify-content: flex-start; text-align: start; gap: 1rem; }
     }
 
-    /* ---------- Services photos ---------- */
-    .service-lane-media.has-photo { overflow: hidden; }
-    .service-lane-media.has-photo img {
-        display: block;
-        width: 100%; height: 100%;
-        object-fit: cover;
+    /* ---------- Services: text only (no photos) ---------- */
+    .services-lanes .service-lane {
+        display: block;            /* single column: there is no media column anymore */
+    }
+    .services-lanes .service-lane-body {
+        width: 100%;
     }
 
     /* ---------- Gallery ---------- */
@@ -418,7 +418,7 @@
     </div>
 </section>
 
-<!-- SERVICES -->
+<!-- SERVICES : text only, no images -->
 {% with services=page.services.all %}
 {% if services %}
 <section class="services services-modern" id="services">
@@ -436,20 +436,6 @@
         <div class="services-lanes" data-reveal-group>
             {% for service in services %}
                 <div class="service-lane" data-reveal style="--i:{{ forloop.counter0 }}">
-                    <div class="service-lane-media has-photo">
-                        {% if service.image %}
-                            {% image service.image width-500 as simg %}
-                            <img src="{{ simg.url }}" alt="{{ service|bi:'title' }}" loading="lazy" />
-                        {% else %}
-                            {# Static fallback: service-1.jpg, service-2.jpg, ... (by position) #}
-                            {% with sfile=forloop.counter|stringformat:"d" %}
-                            {% with spath="home/images/service-"|add:sfile|add:".jpg" %}
-                            <img src="{% static spath %}" alt="{{ service|bi:'title' }}" loading="lazy"
-                                 onerror="this.closest('.service-lane-media').classList.remove('has-photo');this.remove();" />
-                            {% endwith %}
-                            {% endwith %}
-                        {% endif %}
-                    </div>
                     <div class="service-lane-body">
                         <h3>{{ service|bi:"title" }}</h3>
                         <p>{{ service|bi:"description" }}</p>
